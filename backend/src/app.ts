@@ -4,10 +4,13 @@ dotenv.config();
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { ENV } from "src/constants/dotenv";
+import loggerMiddleware from "./utils/logger/logger.middleware";
+import "./configs/firebase";
 
 const app = express();
 
 app.use(cors());
+app.use(loggerMiddleware);
 
 app.get("/", (req: Request, res: Response, next: NextFunction) => {
   res.send({
