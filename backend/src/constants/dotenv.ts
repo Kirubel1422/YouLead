@@ -1,5 +1,6 @@
 export const ENV = {
   APP_PORT: process.env.APP_PORT,
+  APP_COOKIE_SECRET: process.env.COOKIE_SECRET,
 
   // Firebase
   FIREBASE_API_KEY: process.env.FIREBASE_API_KEY,
