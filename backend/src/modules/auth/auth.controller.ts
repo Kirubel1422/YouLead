@@ -1,10 +1,10 @@
-import { ISignupRequest } from "src/types/api/signup.interface";
+import { ISignupRequest } from "src/interfaces/auth.interface";
 import { AuthServices } from "./auth.service";
 import { Request, Response, NextFunction } from "express";
 import { cookieConfig } from "src/configs/cookie";
 import { ApiResp } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
-import { ISignin } from "src/types/user.interface";
+import { ISignin } from "src/interfaces/auth.interface";
 
 export class AuthController {
   private authService: AuthServices;
@@ -26,7 +26,7 @@ export class AuthController {
         req.body as ISignupRequest
       );
 
-      res.cookie("cookie", token, cookieConfig);
+      res.cookie("token", token, cookieConfig);
       logger.info("Registeration Compeleted " + user.profile);
       res
         .status(201)
@@ -44,7 +44,8 @@ export class AuthController {
   ): Promise<void> {
     try {
       const { token, user } = await this.authService.login(req.body as ISignin);
-      res.cookie("cookie", token, cookieConfig);
+      logger.info("Logged in Successfully!  " + user.profile);
+      res.cookie("token", token, cookieConfig);
       res.status(200).json(new ApiResp("Login Success", 200, true, user));
     } catch (error: any) {
       next(error);

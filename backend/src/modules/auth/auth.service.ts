@@ -2,8 +2,8 @@ import axiosInstance from "src/api/axios";
 import { auth, db } from "src/configs/firebase";
 import { ENV } from "src/constants/dotenv";
 import { COLLECTIONS } from "src/constants/firebase.collections";
-import { ISignupRequest } from "src/types/api/signup.interface";
-import { ISignin, IUser } from "src/types/user.interface";
+import { ISignin, ISignupRequest } from "src/interfaces/auth.interface";
+import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 
 export class AuthServices {
@@ -70,7 +70,7 @@ export class AuthServices {
     const createdUser = await auth.createUser(userData);
 
     // Set Custom Claim for User
-    await auth.setCustomUserClaims(createdUser.uid, { role: "user" });
+    await auth.setCustomUserClaims(createdUser.uid, { role: signupData.role });
 
     // Save User to FireStore
     const userPassword = signupData.password;
@@ -81,7 +81,7 @@ export class AuthServices {
       profile: { ...signupData },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      role: "user",
+      role: signupData.role,
       uid: createdUser.uid,
       accountStatus: "active",
     };
