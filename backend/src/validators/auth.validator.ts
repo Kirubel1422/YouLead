@@ -17,6 +17,9 @@ export const SignupSchema = zod.object({
     .regex(/^\+?[1-9]\d{7,14}$/, "Invalid phone number format") // Supports international numbers
     .optional(),
   profilePicture: zod.string().optional(),
+  role: zod.enum(["teamMember", "teamLeader", "coLeader", "admin"], {
+    message: "Invalid role.",
+  }),
 });
 
 export const SigninSchema = zod.object({

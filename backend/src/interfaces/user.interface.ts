@@ -1,11 +1,21 @@
+export type Role =
+  | "admin"
+  | "teamMember"
+  | "teamLeader"
+  | "coLeader"
+  | "unAssigned";
+
 export interface IUser {
-  role: "admin" | "user";
+  role: Role;
   previousPasswords?: string[];
   createdAt: string;
   updatedAt: string;
   uid: string;
   profile: IProfile;
   accountStatus: "active" | "inactive";
+  teamId?: string;
+  taskStatus?: WorkStatus;
+  projectStatus?: WorkStatus;
 }
 
 export interface IProfile {
@@ -17,7 +27,8 @@ export interface IProfile {
   password?: string;
 }
 
-export interface ISignin {
-  email: string;
-  password: string;
+export interface WorkStatus {
+  completed: number;
+  pastdue: number;
+  pending: number;
 }
