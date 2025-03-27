@@ -13,6 +13,7 @@ export class AuthController {
     this.authService = new AuthServices();
     this.userSignup = this.userSignup.bind(this);
     this.userSignin = this.userSignin.bind(this);
+    this.deleteUser = this.deleteUser.bind(this);
   }
 
   // For Signup
@@ -44,10 +45,21 @@ export class AuthController {
   ): Promise<void> {
     try {
       const { token, user } = await this.authService.login(req.body as ISignin);
-      logger.info("Logged in Successfully!  " + user.profile);
+      logger.info("Logged in Successfully!  " + user.profile.email);
       res.cookie("token", token, cookieConfig);
+      console.log(token);
       res.status(200).json(new ApiResp("Login Success", 200, true, user));
     } catch (error: any) {
+      next(error);
+    }
+  }
+
+  // For delete user
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      await this.authService.deleteUser(req.params.uid);
+      res.json(new ApiResp("Successfully deleted user!", 200, true));
+    } catch (error) {
       next(error);
     }
   }
