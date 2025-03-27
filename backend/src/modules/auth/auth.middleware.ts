@@ -3,7 +3,6 @@ import { cookieConfig } from "src/configs/cookie";
 import { auth } from "src/configs/firebase";
 import { ApiError } from "src/utils/api/api.response";
 import { Request } from "src/types/express";
-import logger from "src/utils/logger/logger";
 import { Role } from "src/interfaces/user.interface";
 
 export const authMiddlewares = {
@@ -25,7 +24,6 @@ export const authMiddlewares = {
   validate: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { token } = req.cookies;
-      logger.debug("Token: ", token);
       const decodedToken = await auth.verifyIdToken(token);
 
       if (!decodedToken) {

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import logger from "../logger/logger";
 import { ApiError, ApiResp } from "../api/api.response";
 import { AxiosError } from "axios";
+import { cookieConfig } from "src/configs/cookie";
 
 export async function errorHandler(
   req: Request,
@@ -10,7 +11,7 @@ export async function errorHandler(
   error: any
 ) {
   // Log all errors no matter what
-  logger.error(`${error.message}`);
+  logger.error(`${error}`);
 
   // Firebase errors
   if (error instanceof AxiosError) {
@@ -31,6 +32,17 @@ export async function errorHandler(
       success: error.success,
       data: error.data,
     });
+  }
+
+  if (error.code === "auth/id-token-expired") {
+    res.clearCookie("token", cookieConfig);
+    return res.send(
+      new ApiError("Session expired, please login again", 401, false)
+    );
+  }
+
+  if (error.code == "auth/argument-error") {
+    return res.send(new ApiError("Unauthorized", 401, false));
   }
 
   // Unknown error
