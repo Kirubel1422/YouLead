@@ -10,6 +10,7 @@ export class AuthServices {
   constructor() {
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
+    this.deleteUser = this.deleteUser.bind(this);
   }
 
   async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
@@ -76,15 +77,38 @@ export class AuthServices {
     const userPassword = signupData.password;
 
     // delete password before saving
+    const savedAt = new Date().toISOString();
     delete signupData.password;
-    const user: IUser = {
+
+    let user: IUser = {
       profile: { ...signupData },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: savedAt,
+      updatedAt: savedAt,
       role: signupData.role,
       uid: createdUser.uid,
       accountStatus: "active",
+      teamId: "",
     };
+
+    if (signupData.role != "teamLeader" && signupData.role != "admin") {
+      user = {
+        ...user,
+        taskStatus: {
+          completed: 0,
+          pending: 0,
+          pastDue: 0,
+          createdAt: savedAt,
+          updatedAt: savedAt,
+        },
+        projectStatus: {
+          completed: 0,
+          pending: 0,
+          pastDue: 0,
+          createdAt: savedAt,
+          updatedAt: savedAt,
+        },
+      };
+    }
 
     await db.collection(COLLECTIONS.USERS).doc(createdUser.uid).set(user);
 
@@ -101,5 +125,14 @@ export class AuthServices {
     // return user and idToken to controller
     const { idToken } = response.data;
     return { token: idToken, user };
+  }
+
+  // Delete user by uid
+  async deleteUser(uid: string) {
+    // Delete from auth
+    auth.deleteUser(uid);
+
+    // Delete from user collections
+    await db.collection(COLLECTIONS.USERS).doc(uid).delete();
   }
 }

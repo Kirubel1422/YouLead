@@ -1,3 +1,6 @@
+import { ProjectStatus } from "./project.interface";
+import { TaskStatus } from "./task.interface";
+
 export type Role =
   | "admin"
   | "teamMember"
@@ -14,8 +17,8 @@ export interface IUser {
   profile: IProfile;
   accountStatus: "active" | "inactive";
   teamId?: string;
-  taskStatus?: WorkStatus;
-  projectStatus?: WorkStatus;
+  taskStatus?: TaskStatus;
+  projectStatus?: ProjectStatus;
 }
 
 export interface IProfile {
@@ -25,10 +28,4 @@ export interface IProfile {
   phoneNumber?: string;
   profilePicture?: string;
   password?: string;
-}
-
-export interface WorkStatus {
-  completed: number;
-  pastdue: number;
-  pending: number;
 }
