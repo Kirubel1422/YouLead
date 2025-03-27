@@ -18,4 +18,6 @@ router.delete(
   authMiddlewares.validateTeamLeader,
   teamController.deleteTeam
 );
+router.put("/leave", authMiddlewares.validate, teamController.leaveTeam);
+
 export default router;
