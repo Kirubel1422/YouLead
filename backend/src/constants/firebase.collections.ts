@@ -3,4 +3,5 @@ export const COLLECTIONS = {
   TEAMS: "teams",
   INVITATIONS: "invitations",
   PROJECTS: "projects",
+  TASKS: "tasks",
 };
