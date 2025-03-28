@@ -1,4 +1,4 @@
-type ProjectStatusTypes = "pending" | "completed" | "pastDue";
+type ProjectStatusTypes = "pending" | "pastDue" | "completed";
 
 export interface ProjectStatus {
   completed: number;
@@ -15,7 +15,7 @@ export interface IProject {
   description?: string;
   members: string[];
   teamId: string;
-  deadline: string;
+  deadline?: string[];
   status: ProjectStatusTypes;
   createdAt: string;
   updatedAt: string;

@@ -28,7 +28,7 @@ router.put(
   projectController.removeMember
 );
 router.put(
-  "/editDeadline/:projectId",
+  "/deadline/:projectId",
   authMiddlewares.validateTeamLeader,
   projectController.mutateDeadline
 );

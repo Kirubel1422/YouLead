@@ -3,7 +3,7 @@ import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IProject } from "src/interfaces/project.interface";
-import { IUser } from "src/interfaces/user.interface";
+import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import {
   ProjectAddMembersSchemaType,
@@ -45,7 +45,6 @@ export class ProjectService {
       createdBy,
       status: "pending",
       members: [],
-      deadline: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -128,6 +127,25 @@ export class ProjectService {
         throw new ApiError("Project does not exist", 400);
       }
 
+      // Check if the project is already completed
+      const projectData = projectSnap.data() as IProject;
+
+      if (projectData.status == "completed") {
+        throw new ApiError(
+          "You can not unassign this user as the project is already completed.",
+          400
+        );
+      }
+
+      // Decrease the pending count from the user
+      const userData = userSnap.data() as IUser;
+      transaction.update(userRef, {
+        projectStatus: {
+          ...userData.projectStatus,
+          pending: (userData.projectStatus?.pending as number) - 1,
+        },
+      });
+
       transaction.update(projectRef, {
         members: firestore.FieldValue.arrayRemove(memberId),
       });
@@ -154,7 +172,7 @@ export class ProjectService {
     }
 
     await projectRef.update({
-      deadline: newDeadline,
+      deadline: firestore.FieldValue.arrayUnion(newDeadline),
       updatedAt: new Date().toISOString(),
     });
     const projectData = (await projectRef.get()).data() as IProject;
@@ -166,7 +184,10 @@ export class ProjectService {
   }
 
   // Mark Project as Complete
-  async markAsComplete(projectId: string): Promise<{ message: string }> {
+  async markAsComplete(
+    projectId: string,
+    authData: { role: Role; uid: string }
+  ): Promise<{ message: string }> {
     return db.runTransaction(async (transaction) => {
       // Increment Project Complete Count for Members
       const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
@@ -179,6 +200,15 @@ export class ProjectService {
       // Iterate over all members who are part of this project and
       // Increment complete count
       const project = projectSnap.data() as IProject;
+
+      // Check if the request is coming from a personal
+      // who is part of the task
+      if (
+        !project.members.some((memId) => memId == authData.uid) &&
+        !["admin", "teamLeader"].some((role) => role == authData.role)
+      ) {
+        throw new ApiError("Unauthorized", 401);
+      }
 
       // Check if the project is already completed
       if (project.status == "completed") {
