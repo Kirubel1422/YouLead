@@ -8,7 +8,7 @@ import cors from "cors";
 import { ENV } from "src/constants/dotenv";
 import loggerMiddleware from "./utils/logger/logger.middleware";
 import "./configs/firebase";
-import appRoutes from "./modules/index.route";
+import appRoutes from "./modules/index.routes";
 import { ApiError } from "./utils/api/api.response";
 
 const app = express();
