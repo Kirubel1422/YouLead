@@ -71,7 +71,11 @@ export class ProjectController {
   async markAsComplete(req: Request, res: Response, next: NextFunction) {
     try {
       const { message } = await this.projectService.markAsComplete(
-        req.params.projectId
+        req.params.projectId,
+        {
+          role: req.user.role,
+          uid: req.user.uid,
+        }
       );
       res.json(new ApiResp(message, 200));
     } catch (error) {
