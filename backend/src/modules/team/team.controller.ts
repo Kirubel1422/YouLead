@@ -49,10 +49,19 @@ export class TeamController {
   async joinTeamById(req: Request, res: Response, next: NextFunction) {
     try {
       const { message, data } = await this.teamService.joinTeamById(
-        req.params.teamId,
+        req.query.teamId as string,
         req.user.uid
       );
       res.json(new ApiResp(message, 200, true, data));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Get team details
+  async fetchTeamDetail(req: Request, res: Response, next: NextFunction) {
+    try {
+      // const teamId = req.query.teamId as string;
     } catch (error) {
       next(error);
     }

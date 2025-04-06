@@ -8,6 +8,8 @@ export interface TaskStatus {
   updatedAt: string;
 }
 
+export type TaskPriorityType = "low" | "medium" | "high";
+
 export interface ITask {
   id?: string;
   createdBy: string;
@@ -18,6 +20,8 @@ export interface ITask {
   teamId: string;
   deadline?: string[];
   status: TaskStatusType;
+  progress: number;
   createdAt: string;
   updatedAt: string;
+  priority: TaskPriorityType;
 }

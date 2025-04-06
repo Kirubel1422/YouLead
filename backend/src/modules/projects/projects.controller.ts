@@ -13,6 +13,7 @@ export class ProjectController {
     this.mutateDeadline = this.mutateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.removeMember = this.removeMember.bind(this);
+    this.getMyProjects = this.getMyProjects.bind(this);
   }
 
   // Create Project Controller
@@ -90,6 +91,25 @@ export class ProjectController {
         req.params.projectId
       );
       res.json(new ApiResp(message, 200));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Fetch my projects
+  async getMyProjects(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId, page, limit } = req.query;
+
+      const { projects, total } = await this.projectService.getMyProjects(
+        req.user.uid,
+        teamId as string,
+        {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+        }
+      );
+      res.json(new ApiResp("Sucess", 200, true, { projects, total }));
     } catch (error) {
       next(error);
     }

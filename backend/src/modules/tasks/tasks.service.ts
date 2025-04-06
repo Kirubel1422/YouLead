@@ -19,6 +19,7 @@ export class TaskService {
     this.mutuateDeadline = this.mutuateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
+    this.fetchMyTasks = this.fetchMyTasks.bind(this);
   }
 
   // Create Task
@@ -44,8 +45,10 @@ export class TaskService {
       createdBy,
       status: "pending",
       assignedTo: [],
+      progress: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      priority: taskData.priority || "low",
     };
 
     await taskCollection.add(newTask);
@@ -276,7 +279,7 @@ export class TaskService {
       );
 
       // Finally mark as complete
-      transaction.update(taskRef, { status: "completed" });
+      transaction.update(taskRef, { status: "completed", progress: 100 });
 
       return { message: "Congratulations for completing the task!" };
     });
@@ -294,5 +297,30 @@ export class TaskService {
     await taskRef.delete();
 
     return { message: "Task has been deleted successfully!" };
+  }
+
+  // Fetch my tasks
+  async fetchMyTasks(
+    userId: string
+  ): Promise<{ tasks: ITask[]; total: number }> {
+    const tasksQuery = await db
+      .collection(COLLECTIONS.TASKS)
+      .where("assignedTo", "array-contains", userId)
+      .get();
+    const total = tasksQuery.size;
+
+    const tasks = await Promise.all(
+      tasksQuery.docs.map(async (doc) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        } as ITask;
+      })
+    );
+
+    return {
+      tasks,
+      total,
+    };
   }
 }
