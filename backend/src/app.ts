@@ -10,11 +10,33 @@ import loggerMiddleware from "./utils/logger/logger.middleware";
 import "./configs/firebase";
 import appRoutes from "./modules/index.routes";
 import { ApiError } from "./utils/api/api.response";
+import { createServer } from "http";
+import initializeSocket from "./services/socket";
 
 const app = express();
 
+// Handle Socket
+const server = createServer(app);
+initializeSocket(server);
+
 app.use(express.json());
-app.use(cors());
+
+// CORS
+app.use(
+  cors({
+    origin: ENV.CLIENT_URL,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+  })
+);
+
 app.use(loggerMiddleware);
 app.use(cookieParser(ENV.APP_COOKIE_SECRET));
 
@@ -28,4 +50,6 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   throw new ApiError("Route not found", 404, false);
 });
 
-app.listen(ENV.APP_PORT, () => console.log("Listening on PORT", ENV.APP_PORT));
+server.listen(ENV.APP_PORT, () =>
+  console.log("Listening on PORT", ENV.APP_PORT)
+);

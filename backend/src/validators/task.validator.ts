@@ -6,6 +6,9 @@ export const TaskSchema = z.object({
   taskDeadline: z.string().date("Invalid date").optional(),
   teamId: z.string().nonempty("Team id is required"),
   projectId: z.string().nonempty("Project id is required"),
+  priority: z.enum(["low", "medium", "high"], {
+    errorMap: () => ({ message: "Priority is required" }),
+  }),
 });
 
 export const TaskAddMembersSchema = z.object({

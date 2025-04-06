@@ -1,8 +1,9 @@
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
-import { ITeam } from "src/interfaces/team.interface";
+import { ITeam, ITeamDetail } from "src/interfaces/team.interface";
 import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
+import logger from "src/utils/logger/logger";
 import { CreateTeamSchemaType } from "src/validators/team.validator";
 
 export class TeamService {
@@ -11,6 +12,7 @@ export class TeamService {
     this.deleteTeam = this.deleteTeam.bind(this);
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
+    this.getTeamDetail = this.getTeamDetail.bind(this);
   }
 
   // This is done by only a team leader, so after calling this api the role of
@@ -47,6 +49,7 @@ export class TeamService {
       ...body,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      teamLeaderId: teamLeaderUID,
     } as ITeam;
 
     const newTeamRef = await db.collection(COLLECTIONS.TEAMS).add(teamData);
@@ -142,5 +145,39 @@ export class TeamService {
     await userRef.update({ teamId });
 
     return { message: "Joined team successfully", data: teamData };
+  }
+
+  /**
+   *
+   * @param teamId
+   * @returns
+   */
+  async getTeamDetail(teamId: string): Promise<Partial<ITeamDetail>> {
+    // Fetch the team data related to the invitation
+    const teamRef = await db.collection(COLLECTIONS.TEAMS).doc(teamId).get();
+
+    if (!teamRef.exists) {
+      logger.warn(`Team not found for teamId: ${teamId}`);
+      throw new ApiError(`Invalid team id`, 400, false);
+    }
+
+    const { teamLeaderId, name, organization } = teamRef.data() as ITeam;
+
+    const userRef = await db
+      .collection(COLLECTIONS.USERS)
+      .doc(teamLeaderId)
+      .get();
+    const userData = userRef.data() as IUser;
+
+    return {
+      leader: {
+        name: userData.profile.firstName + " " + userData.profile.lastName,
+        email: userData.profile.email,
+        profilePicture: userData.profile.profilePicture || "",
+      },
+      id: teamId,
+      name,
+      organization,
+    };
   }
 }

@@ -9,6 +9,7 @@ export class InvitationController {
     this.invitationService = new InvitationService();
     this.inviteMember = this.inviteMember.bind(this);
     this.respondInvitation = this.respondInvitation.bind(this);
+    this.fetchMyInvitations = this.fetchMyInvitations.bind(this);
   }
 
   // Invite member to team controller
@@ -33,6 +34,18 @@ export class InvitationController {
       );
 
       res.json(new ApiResp(message, 200));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Fetch a list of my invitations
+  async fetchMyInvitations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { data, total } = await this.invitationService.myInvitations(
+        req.query.email as string
+      );
+      res.status(200).json({ data, total });
     } catch (error) {
       next(error);
     }

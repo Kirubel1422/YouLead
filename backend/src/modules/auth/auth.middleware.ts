@@ -4,11 +4,18 @@ import { auth } from "src/configs/firebase";
 import { ApiError } from "src/utils/api/api.response";
 import { Request } from "src/types/express";
 import { Role } from "src/interfaces/user.interface";
+import logger from "src/utils/logger/logger";
 
 export const authMiddlewares = {
   validateAdmin: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { token } = req.cookies;
+
+      if (!token) {
+        logger.error("Cookie not found.");
+        throw new ApiError("Unauthorized", 401);
+      }
+
       const decodedToken = await auth.verifyIdToken(token);
 
       if (!decodedToken || (decodedToken.role as Role) != "admin") {
@@ -24,6 +31,12 @@ export const authMiddlewares = {
   validate: async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { token } = req.cookies;
+
+      if (!token) {
+        logger.error("Cookie not found.");
+        throw new ApiError("Unauthorized", 401);
+      }
+
       const decodedToken = await auth.verifyIdToken(token);
 
       if (!decodedToken) {

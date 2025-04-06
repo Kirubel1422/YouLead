@@ -14,6 +14,7 @@ export class TaskController {
     this.mutateDeadline = this.mutateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.unAssign = this.unAssign.bind(this);
+    this.fetchMyTasks = this.fetchMyTasks.bind(this);
   }
 
   // Create Task Controller

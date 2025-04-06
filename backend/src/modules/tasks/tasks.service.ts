@@ -52,6 +52,7 @@ export class TaskService {
       assignedTo: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      priority: "medium",
     };
 
     await taskCollection.add(newTask);

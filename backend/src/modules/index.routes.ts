@@ -8,6 +8,7 @@ import analyticsRoutes from "./analytics/analytics.router";
 import meetingRouter from "./meeting/meeting.router";
 import attendanceRouter from "./attendance/attendance.router";
 
+
 const router = Router();
 
 router.use("/auth", authRoutes);
