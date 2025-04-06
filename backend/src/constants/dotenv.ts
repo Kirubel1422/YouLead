@@ -6,6 +6,8 @@ export const ENV = {
     process.env.NODE_ENV === "pro"
       ? process.env.PRO_COOKIE_DOMAIN
       : process.env.DEV_COOKIE_DOMAIN,
+  APP_EMAIL: process.env.EMAIL,
+  APP_PASSWORD: process.env.APP_PASSWORD,
 
   // Frontend
   CLIENT_URL: process.env.CLIENT_URL?.split(",") || [],

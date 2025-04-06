@@ -48,25 +48,6 @@ import { getInitials, getRoleLabel } from "@/utils/basic";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 
-// Types based on the provided interfaces
-type Role = "admin" | "teamLeader" | "teamMember";
-
-interface TaskStatus {
-     completed: number;
-     pending: number;
-     pastDue: number;
-     createdAt: string;
-     updatedAt: string;
-}
-
-interface ProjectStatus {
-     completed: number;
-     inProgress: number;
-     notStarted: number;
-     createdAt: string;
-     updatedAt: string;
-}
-
 interface IProfile {
      firstName: string;
      lastName?: string;
@@ -74,19 +55,6 @@ interface IProfile {
      phoneNumber?: string;
      profilePicture?: string;
      password?: string;
-}
-
-interface IUser {
-     role: Role;
-     previousPasswords?: string[];
-     createdAt: string;
-     updatedAt: string;
-     uid: string;
-     profile: IProfile;
-     accountStatus: "active" | "inactive";
-     teamId?: string;
-     taskStatus?: TaskStatus;
-     projectStatus?: ProjectStatus;
 }
 
 // Mock team data
@@ -173,7 +141,7 @@ export default function Profile() {
           }
 
           // Update password (in a real app, this would call an API)
-          const updatedPreviousPasswords = [...(user.previousPasswords || []), currentPassword];
+          // const updatedPreviousPasswords = [...(user.previousPasswords || []), currentPassword];
 
           // Reset form
           setCurrentPassword("");

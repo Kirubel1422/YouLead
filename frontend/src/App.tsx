@@ -8,13 +8,13 @@ import Signup from "./pages/Signup";
 import OnboardingTeamMember from "./pages/Client/Onboard-TeamMember";
 import Profile from "./pages/Client/Profile";
 import { useMeQuery } from "./api/auth.api";
-import { logout, setUserTeamState, updateUser } from "./store/auth/authSlice";
+import { setUserTeamState, updateUser } from "./store/auth/authSlice";
 
-const authorized = [];
+// const authorized = [];
 const unauthorized = ["/login", "/signup"];
 
 export default function App() {
-     const { isAuthenticated, user, hasTeam } = useSelector((state: RootState) => state.base.auth);
+     const { isAuthenticated } = useSelector((state: RootState) => state.base.auth);
 
      const navigate = useNavigate();
      const location = useLocation();
@@ -29,20 +29,16 @@ export default function App() {
      );
 
      useEffect(() => {
-          if (userData) {
+          if (isAuthenticated && userData) {
                dispatch(setUserTeamState({ hasTeam: !!userData.teamId }));
                dispatch(updateUser(userData));
           }
      }, [userData]);
 
      useEffect(() => {
-          if (isAuthenticated && user && unauthorized.some((path: string) => location.pathname === path)) {
+          if (isAuthenticated && unauthorized.some((path: string) => location.pathname === path)) {
                navigate("/dashboard");
           }
-     }, [location.pathname]);
-
-     useEffect(() => {
-          if (!hasTeam && user) navigate("/dashboard/onboarding");
      }, [location.pathname]);
 
      return (

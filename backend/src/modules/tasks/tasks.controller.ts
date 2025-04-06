@@ -1,6 +1,7 @@
 import { ApiResp } from "src/utils/api/api.response";
 import { Request, Response, NextFunction } from "express";
 import { TaskService } from "./tasks.service";
+import { TaskFilter } from "src/interfaces/task.interface";
 
 export class TaskController {
   private taskService: TaskService;
@@ -97,7 +98,10 @@ export class TaskController {
   // Fetch My Tasks Controller
   async fetchMyTasks(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await this.taskService.fetchMyTasks(req.user.uid);
+      const data = await this.taskService.fetchMyTasks(
+        req.user.uid,
+        req.query.deadline as TaskFilter
+      );
       res.json(new ApiResp("Successfully fetched tasks.", 200, true, data));
     } catch (error) {
       next(error);

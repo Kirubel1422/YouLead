@@ -5,4 +5,7 @@ export const COLLECTIONS = {
   PROJECTS: "projects",
   TASKS: "tasks",
   MESSAGES: "messages",
+  ATTENDACE: "attendance",
+  MEETINGS: "meetings",
+  ATTENDACEINFO: "attendanceInfo",
 };

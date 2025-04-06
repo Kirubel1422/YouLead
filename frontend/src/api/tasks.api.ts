@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IResponse } from "@/types/response.types";
-import { ITask } from "@/types/task.types";
+import { ITask, TaskFilter } from "@/types/task.types";
 
 export interface IMyTasksResponse {
      tasks: ITask[];
@@ -18,8 +18,8 @@ const tasksApi = createApi({
      tagTypes: ["Tasks"],
 
      endpoints: (builder) => ({
-          myTasks: builder.query<IMyTasksResponse, void>({
-               query: () => "/my",
+          myTasks: builder.query<IMyTasksResponse, TaskFilter>({
+               query: (deadline) => `/my${deadline ? `?deadline=${deadline}` : ""}`,
 
                transformResponse: (res: IResponse) => (res.statusCode === 200 ? res.data : ({} as IMyTasksResponse)),
 

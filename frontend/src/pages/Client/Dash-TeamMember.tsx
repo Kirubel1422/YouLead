@@ -15,7 +15,14 @@ import { AlertCircle, BarChart3, Calendar, Clock, FileText, MoreHorizontal } fro
 import { Badge } from "@/components/ui/badge";
 import { getDaysRemaining, getPriorityColor, getStatusColor } from "@/utils/basic";
 import { useMyTasksQuery } from "@/api/tasks.api";
-import { ITask } from "@/types/task.types";
+import { ITask, TaskFilter } from "@/types/task.types";
+import { useGetMainQuery } from "@/api/analytics.api";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FC, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/rootReducer";
+import { Empty } from "@/components/placeholder/empty";
+import { useNavigate } from "react-router";
 
 const activities = [
      {
@@ -80,7 +87,14 @@ const upcomingMeetings = [
 ];
 
 export default function TeamMemberDashboard() {
-     const { data, isFetching: fetchingTasks } = useMyTasksQuery(undefined);
+     const { user } = useSelector((state: RootState) => state.base.auth);
+     const [taskFilter, setTaskFilter] = useState<TaskFilter>(undefined);
+
+     const { data, isFetching: fetchingTasks } = useMyTasksQuery(taskFilter, {
+          refetchOnMountOrArgChange: true,
+     });
+
+     const { data: analytics, isFetching: fetchingAnalytics } = useGetMainQuery();
 
      const formatDate = (dateString: string) => {
           const date = new Date(dateString);
@@ -101,76 +115,117 @@ export default function TeamMemberDashboard() {
           <Layout>
                <main className="flex-1 overflow-y-auto p-4 md:p-6">
                     <div className="mb-6">
-                         <h1 className="text-2xl font-bold">Welcome back, John!</h1>
+                         <h1 className="text-2xl font-bold">Welcome back, {user.profile.firstName}!</h1>
                          <p className="text-gray-500">Here's what's happening with your tasks and projects today.</p>
                     </div>
 
                     {/* Stats Overview */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                         <Card>
-                              <CardContent className="p-6">
-                                   <div className="flex items-center justify-between">
-                                        <div>
-                                             <p className="text-sm font-medium text-gray-500">Tasks Due Soon</p>
-                                             <h3 className="text-2xl font-bold mt-1">5</h3>
+                    {fetchingAnalytics ? (
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                              {Array.from({ length: 4 }, (_, i: number) => (
+                                   <Card key={i}>
+                                        <CardContent className="p-6">
+                                             <div className="flex items-center justify-between">
+                                                  <div>
+                                                       <p className="text-sm font-medium text-gray-500 mb-4">
+                                                            <Skeleton className="w-20 h-2" />
+                                                       </p>
+                                                       <h3 className="text-2xl font-bold mt-1">
+                                                            <Skeleton className="w-24 h-4" />
+                                                       </h3>
+                                                  </div>
+                                                  <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-500">
+                                                       <Skeleton className="w-12 h-12" />
+                                                  </div>
+                                             </div>
+                                        </CardContent>
+                                   </Card>
+                              ))}
+                         </div>
+                    ) : (
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                              <Card>
+                                   <CardContent className="p-6">
+                                        <div className="flex items-center justify-between">
+                                             <div>
+                                                  <p className="text-sm font-medium text-gray-500">Tasks Due Soon</p>
+                                                  <h3 className="text-2xl font-bold mt-1">
+                                                       {analytics?.tasksDueSoon || 0}
+                                                  </h3>
+                                             </div>
+                                             <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-500">
+                                                  <AlertCircle className="h-6 w-6" />
+                                             </div>
                                         </div>
-                                        <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center text-red-500">
-                                             <AlertCircle className="h-6 w-6" />
-                                        </div>
-                                   </div>
-                                   <p className="text-xs text-red-500 mt-2">3 tasks due this week</p>
-                              </CardContent>
-                         </Card>
+                                        <p className="text-xs text-red-500 mt-2">
+                                             {analytics?.tasksDueSoon} tasks due this week
+                                        </p>
+                                   </CardContent>
+                              </Card>
 
-                         <Card>
-                              <CardContent className="p-6">
-                                   <div className="flex items-center justify-between">
-                                        <div>
-                                             <p className="text-sm font-medium text-gray-500">Completion Rate</p>
-                                             <h3 className="text-2xl font-bold mt-1">68%</h3>
+                              <Card>
+                                   <CardContent className="p-6">
+                                        <div className="flex items-center justify-between">
+                                             <div>
+                                                  <p className="text-sm font-medium text-gray-500">Completion Rate</p>
+                                                  <h3 className="text-2xl font-bold mt-1">
+                                                       {((analytics?.completionRate || 0) * 100).toFixed(1)}%
+                                                  </h3>
+                                             </div>
+                                             <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center text-green-500">
+                                                  <BarChart3 className="h-6 w-6" />
+                                             </div>
                                         </div>
-                                        <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center text-green-500">
-                                             <BarChart3 className="h-6 w-6" />
-                                        </div>
-                                   </div>
-                                   <Progress value={68} className="h-2 mt-2" />
-                              </CardContent>
-                         </Card>
+                                        <Progress value={(analytics?.completionRate || 0) * 100} className="h-2 mt-2" />
+                                   </CardContent>
+                              </Card>
 
-                         <Card>
-                              <CardContent className="p-6">
-                                   <div className="flex items-center justify-between">
-                                        <div>
-                                             <p className="text-sm font-medium text-gray-500">Active Projects</p>
-                                             <h3 className="text-2xl font-bold mt-1">3</h3>
+                              <Card>
+                                   <CardContent className="p-6">
+                                        <div className="flex items-center justify-between">
+                                             <div>
+                                                  <p className="text-sm font-medium text-gray-500">Active Projects</p>
+                                                  <h3 className="text-2xl font-bold mt-1">
+                                                       {analytics?.activeProjects || 0}
+                                                  </h3>
+                                             </div>
+                                             <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-500">
+                                                  <FileText className="h-6 w-6" />
+                                             </div>
                                         </div>
-                                        <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-500">
-                                             <FileText className="h-6 w-6" />
-                                        </div>
-                                   </div>
-                              </CardContent>
-                         </Card>
+                                   </CardContent>
+                              </Card>
 
-                         <Card>
-                              <CardContent className="p-6">
-                                   <div className="flex items-center justify-between">
-                                        <div>
-                                             <p className="text-sm font-medium text-gray-500">Upcoming Meetings</p>
-                                             <h3 className="text-2xl font-bold mt-1">2</h3>
+                              <Card>
+                                   <CardContent className="p-6">
+                                        <div className="flex items-center justify-between">
+                                             <div>
+                                                  <p className="text-sm font-medium text-gray-500">Upcoming Meetings</p>
+                                                  <h3 className="text-2xl font-bold mt-1">
+                                                       {analytics?.upcomingMeetings || 0}
+                                                  </h3>
+                                             </div>
+                                             <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-500">
+                                                  <Calendar className="h-6 w-6" />
+                                             </div>
                                         </div>
-                                        <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-500">
-                                             <Calendar className="h-6 w-6" />
-                                        </div>
-                                   </div>
-                                   <p className="text-xs text-gray-500 mt-2">Next: Today, 10:00 AM</p>
-                              </CardContent>
-                         </Card>
-                    </div>
+                                        <p className="text-xs text-gray-500 mt-2">
+                                             Next: {formatDate(analytics?.latestMeeting || new Date().toLocaleString())}
+                                        </p>
+                                   </CardContent>
+                              </Card>
+                         </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                          {/* My Tasks */}
                          <div className="lg:col-span-2">
-                              <Tabs defaultValue="all">
+                              <Tabs
+                                   onValueChange={(value) => {
+                                        setTaskFilter(value as TaskFilter);
+                                   }}
+                                   defaultValue="all"
+                              >
                                    <div className="flex items-center justify-between mb-4">
                                         <h2 className="text-xl font-bold">My Tasks</h2>
                                         <TabsList>
@@ -185,107 +240,47 @@ export default function TeamMemberDashboard() {
                                              data &&
                                              data.tasks &&
                                              data.tasks.map((task: ITask) => (
-                                                  <Card key={task.id} className="overflow-hidden">
-                                                       <CardContent className="p-0">
-                                                            <div className="flex flex-col sm:flex-row sm:items-center p-4">
-                                                                 <div className="flex-1 min-w-0">
-                                                                      <div className="flex items-center mb-1">
-                                                                           <h3 className="text-sm font-medium truncate mr-2">
-                                                                                {task.name}
-                                                                           </h3>
-                                                                           <Badge
-                                                                                className={getStatusColor(task.status)}
-                                                                           >
-                                                                                {task.status}
-                                                                           </Badge>
-                                                                           <Badge
-                                                                                className={`ml-2 ${getPriorityColor(
-                                                                                     task.priority,
-                                                                                )}`}
-                                                                           >
-                                                                                {task.priority}
-                                                                           </Badge>
-                                                                      </div>
-
-                                                                      <p className="text-xs text-gray-500">
-                                                                           {task.projectId} • Due{" "}
-                                                                           {task.deadline ? (
-                                                                                <>
-                                                                                     {formatDate(task.deadline[0])}
-                                                                                     {isOverdue(task.deadline[0]) ? (
-                                                                                          <span className="text-red-500 ml-2">
-                                                                                               Overdue
-                                                                                          </span>
-                                                                                     ) : (
-                                                                                          <span className="ml-2">
-                                                                                               {getDaysRemaining(
-                                                                                                    task.deadline[0],
-                                                                                               ) === 0
-                                                                                                    ? "Due today"
-                                                                                                    : `${getDaysRemaining(
-                                                                                                           task
-                                                                                                                .deadline[0],
-                                                                                                      )} days left`}
-                                                                                          </span>
-                                                                                     )}
-                                                                                </>
-                                                                           ) : (
-                                                                                <span>deadline unassigned</span>
-                                                                           )}
-                                                                      </p>
-                                                                 </div>
-                                                                 <div className="mt-2 sm:mt-0 flex items-center">
-                                                                      <div className="w-32 mr-4">
-                                                                           <div className="flex items-center">
-                                                                                <Progress
-                                                                                     value={task.progress}
-                                                                                     className="h-2 flex-1"
-                                                                                />
-                                                                                <span className="ml-2 text-xs font-medium">
-                                                                                     {task.progress}%
-                                                                                </span>
-                                                                           </div>
-                                                                      </div>
-                                                                      <DropdownMenu>
-                                                                           <DropdownMenuTrigger asChild>
-                                                                                <Button variant="ghost" size="icon">
-                                                                                     <MoreHorizontal className="h-4 w-4" />
-                                                                                </Button>
-                                                                           </DropdownMenuTrigger>
-                                                                           <DropdownMenuContent align="end">
-                                                                                <DropdownMenuItem>
-                                                                                     View Details
-                                                                                </DropdownMenuItem>
-                                                                                <DropdownMenuItem>
-                                                                                     Mark as Complete
-                                                                                </DropdownMenuItem>
-                                                                                <DropdownMenuSeparator />
-                                                                                <DropdownMenuItem>
-                                                                                     Remove
-                                                                                </DropdownMenuItem>
-                                                                           </DropdownMenuContent>
-                                                                      </DropdownMenu>
-                                                                 </div>
-                                                            </div>
-                                                       </CardContent>
-                                                  </Card>
+                                                  <TaskCard
+                                                       isOverdue={isOverdue}
+                                                       formatDate={formatDate}
+                                                       task={task}
+                                                       key={task.id}
+                                                  />
                                              ))}
+
+                                        {data && data.total === 0 && <Empty />}
                                    </TabsContent>
 
-                                   <TabsContent value="today">
-                                        <Card>
-                                             <CardContent className="p-6">
-                                                  <p>Tasks due today will appear here.</p>
-                                             </CardContent>
-                                        </Card>
+                                   <TabsContent value="today" className="space-y-4">
+                                        {!fetchingTasks &&
+                                             data &&
+                                             data.tasks &&
+                                             data.tasks.map((task: ITask) => (
+                                                  <TaskCard
+                                                       isOverdue={isOverdue}
+                                                       formatDate={formatDate}
+                                                       task={task}
+                                                       key={task.id}
+                                                  />
+                                             ))}
+
+                                        {data && data.total === 0 && <Empty />}
                                    </TabsContent>
 
-                                   <TabsContent value="upcoming">
-                                        <Card>
-                                             <CardContent className="p-6">
-                                                  <p>Upcoming tasks will appear here.</p>
-                                             </CardContent>
-                                        </Card>
+                                   <TabsContent value="upcoming" className="space-y-4">
+                                        {!fetchingTasks &&
+                                             data &&
+                                             data.tasks &&
+                                             data.tasks.map((task: ITask) => (
+                                                  <TaskCard
+                                                       isOverdue={isOverdue}
+                                                       formatDate={formatDate}
+                                                       task={task}
+                                                       key={task.id}
+                                                  />
+                                             ))}
+
+                                        {data && data.total === 0 && <Empty />}
                                    </TabsContent>
                               </Tabs>
                          </div>
@@ -362,3 +357,68 @@ export default function TeamMemberDashboard() {
           </Layout>
      );
 }
+
+interface TaskCardProps {
+     task: ITask;
+     isOverdue: (dateStr: string) => boolean;
+     formatDate: (dateStr: string) => unknown;
+}
+
+const TaskCard = ({ task, formatDate, isOverdue }: TaskCardProps) => {
+     return (
+          <Card key={task.id} className="overflow-hidden">
+               <CardContent className="p-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center p-4">
+                         <div className="flex-1 min-w-0">
+                              <div className="flex items-center mb-1">
+                                   <h3 className="text-sm font-medium truncate mr-2">{task.name}</h3>
+                                   <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+                                   <Badge className={`ml-2 ${getPriorityColor(task.priority)}`}>{task.priority}</Badge>
+                              </div>
+
+                              <p className="text-xs text-gray-500">
+                                   {task.projectId} • Due{" "}
+                                   {task.deadline ? (
+                                        <>
+                                             {formatDate(task.deadline[0])}
+                                             {isOverdue(task.deadline[0]) ? (
+                                                  <span className="text-red-500 ml-2">Overdue</span>
+                                             ) : (
+                                                  <span className="ml-2">
+                                                       {getDaysRemaining(task.deadline[0]) === 0
+                                                            ? "Due today"
+                                                            : `${getDaysRemaining(task.deadline[0])} days left`}
+                                                  </span>
+                                             )}
+                                        </>
+                                   ) : (
+                                        <span>deadline unassigned</span>
+                                   )}
+                              </p>
+                         </div>
+                         <div className="mt-2 sm:mt-0 flex items-center">
+                              <div className="w-32 mr-4">
+                                   <div className="flex items-center">
+                                        <Progress value={task.progress} className="h-2 flex-1" />
+                                        <span className="ml-2 text-xs font-medium">{task.progress}%</span>
+                                   </div>
+                              </div>
+                              <DropdownMenu>
+                                   <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                             <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                   </DropdownMenuTrigger>
+                                   <DropdownMenuContent align="end">
+                                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                                        <DropdownMenuItem>Mark as Complete</DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem>Remove</DropdownMenuItem>
+                                   </DropdownMenuContent>
+                              </DropdownMenu>
+                         </div>
+                    </div>
+               </CardContent>
+          </Card>
+     );
+};

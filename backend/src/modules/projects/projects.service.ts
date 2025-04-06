@@ -20,6 +20,7 @@ export class ProjectService {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteProject = this.deleteProject.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
+    this.getProjectById = this.getProjectById.bind(this);
   }
 
   // Create Project
@@ -304,5 +305,28 @@ export class ProjectService {
     })) as IProject[];
 
     return { total, projects };
+  }
+
+  /**
+   *
+   * @param projectId
+   * @returns
+   */
+  async getProjectById(projectId: string): Promise<IProject> {
+    const projectSnap = await db
+      .collection(COLLECTIONS.PROJECTS)
+      .doc(projectId)
+      .get();
+
+    if (!projectSnap.exists) {
+      throw new ApiError("Project not found", 400);
+    }
+
+    const projectData = projectSnap.data() as IProject;
+
+    return {
+      ...projectData,
+      id: projectSnap.id,
+    };
   }
 }

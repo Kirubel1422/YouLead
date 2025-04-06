@@ -114,4 +114,14 @@ export class ProjectController {
       next(error);
     }
   }
+  async getProjectById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await this.projectService.getProjectById(
+        req.params.projectId
+      );
+      res.json(new ApiResp("Success", 200, true, data));
+    } catch (error) {
+      next(error);
+    }
+  }
 }

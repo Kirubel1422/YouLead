@@ -3,15 +3,18 @@ import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IProject } from "src/interfaces/project.interface";
-import { ITask } from "src/interfaces/task.interface";
+import { ITask, ITaskDetail, TaskFilter } from "src/interfaces/task.interface";
 import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import {
   TaskAddMembersSchemaType,
   TaskSchemaType,
 } from "src/validators/task.validator";
+import { ProjectService } from "../projects/projects.service";
 
 export class TaskService {
+  projectService: ProjectService;
+
   constructor() {
     this.createTask = this.createTask.bind(this);
     this.assignTask = this.assignTask.bind(this);
@@ -20,6 +23,8 @@ export class TaskService {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
+
+    this.projectService = new ProjectService();
   }
 
   // Create Task
@@ -45,10 +50,9 @@ export class TaskService {
       createdBy,
       status: "pending",
       assignedTo: [],
-      progress: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      priority: taskData.priority || "low",
+      priority: "medium",
     };
 
     await taskCollection.add(newTask);
@@ -112,7 +116,7 @@ export class TaskService {
           }
 
           const userData = userSnap.data() as IUser;
-          console.log(userData);
+
           transaction.update(userRef, {
             taskStatus: {
               ...userData.taskStatus,
@@ -279,7 +283,7 @@ export class TaskService {
       );
 
       // Finally mark as complete
-      transaction.update(taskRef, { status: "completed", progress: 100 });
+      transaction.update(taskRef, { status: "completed" });
 
       return { message: "Congratulations for completing the task!" };
     });
@@ -301,26 +305,53 @@ export class TaskService {
 
   // Fetch my tasks
   async fetchMyTasks(
-    userId: string
-  ): Promise<{ tasks: ITask[]; total: number }> {
-    const tasksQuery = await db
+    userId: string,
+    deadline?: TaskFilter
+  ): Promise<{ tasks: ITaskDetail[]; total: number }> {
+    if (deadline && !["today", "upcoming", "all"].includes(deadline)) {
+      throw new ApiError("Invalid filter", 400);
+    }
+
+    const tasksQuerySnap = await db
       .collection(COLLECTIONS.TASKS)
       .where("assignedTo", "array-contains", userId)
       .get();
-    const total = tasksQuery.size;
+
+    const today = dayjs();
 
     const tasks = await Promise.all(
-      tasksQuery.docs.map(async (doc) => {
+      tasksQuerySnap.docs.map(async (doc) => {
+        const data = doc.data();
+
+        if (deadline !== "all") {
+          const deadlineArray: string[] = data.deadline;
+
+          if (deadline && deadlineArray.length > 0) {
+            const lastDeadline = dayjs(deadlineArray.at(-1));
+
+            const isToday = lastDeadline.isSame(today, "day");
+            const isUpcoming = lastDeadline.isAfter(today, "day");
+
+            if (deadline === "today" && !isToday) return null;
+            if (deadline === "upcoming" && !isUpcoming) return null;
+          }
+        }
+
+        const projectDetail = await this.projectService.getProjectById(
+          data.projectId
+        );
+
         return {
           id: doc.id,
-          ...doc.data(),
-        } as ITask;
+          ...data,
+          projectName: projectDetail.name,
+        } as ITaskDetail;
       })
     );
 
     return {
-      tasks,
-      total,
+      tasks: tasks.filter(Boolean) as ITaskDetail[], // removes null values,
+      total: tasks.filter(Boolean).length,
     };
   }
 }

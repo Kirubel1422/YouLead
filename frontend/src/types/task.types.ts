@@ -24,3 +24,5 @@ export interface ITask {
      updatedAt: string;
      priority: TaskPriorityType;
 }
+
+export type TaskFilter = "today" | "upcoming" | "all" | undefined;

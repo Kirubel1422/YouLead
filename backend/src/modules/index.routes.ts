@@ -5,6 +5,9 @@ import invitationRoutes from "./invitation/invitation.router";
 import projectRoutes from "./projects/projects.router";
 import taskRoutes from "./tasks/tasks.router";
 import analyticsRoutes from "./analytics/analytics.router";
+import meetingRouter from "./meeting/meeting.router";
+import attendanceRouter from "./attendance/attendance.router";
+
 
 const router = Router();
 
@@ -14,5 +17,7 @@ router.use("/invitations", invitationRoutes);
 router.use("/projects", projectRoutes);
 router.use("/tasks", taskRoutes);
 router.use("/analytics", analyticsRoutes);
+router.use("/meeting", meetingRouter);
+router.use("/attendance", attendanceRouter);
 
 export default router;

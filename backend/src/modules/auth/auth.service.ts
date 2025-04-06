@@ -1,3 +1,4 @@
+import { firestore } from "firebase-admin";
 import axiosInstance from "src/api/axios";
 import { auth, db } from "src/configs/firebase";
 import { ENV } from "src/constants/dotenv";
@@ -81,6 +82,20 @@ export class AuthServices {
     const savedAt = new Date().toISOString();
     delete signupData.password;
 
+    // Create attendance info
+    let result: firestore.DocumentReference | null = null;
+
+    if (signupData.role != "teamLeader" && signupData.role != "admin") {
+      result = await db.collection(COLLECTIONS.ATTENDACEINFO).add({
+        createdAt: savedAt,
+        updatedAt: savedAt,
+        absenceScore: 0,
+        attended: 0,
+        missed: 0,
+        total: 0,
+      });
+    }
+
     let user: IUser = {
       profile: { ...signupData },
       createdAt: savedAt,
@@ -89,6 +104,7 @@ export class AuthServices {
       uid: createdUser.uid,
       accountStatus: "active",
       teamId: "",
+      attendanceInfoId: result != null ? result.id : "",
     };
 
     if (signupData.role != "teamLeader" && signupData.role != "admin") {

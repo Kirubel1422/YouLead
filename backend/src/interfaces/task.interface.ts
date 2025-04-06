@@ -9,6 +9,7 @@ export interface TaskStatus {
 }
 
 export type TaskPriorityType = "low" | "medium" | "high";
+export type TaskFilter = "today" | "upcoming" | "all";
 
 export interface ITask {
   id?: string;
@@ -24,4 +25,8 @@ export interface ITask {
   createdAt: string;
   updatedAt: string;
   priority: TaskPriorityType;
+}
+
+export interface ITaskDetail extends ITask {
+  projectName: string;
 }
