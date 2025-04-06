@@ -1,7 +1,7 @@
 export type AuthState = {
      isAuthenticated: boolean;
      user: any;
-     hasTeam: string | null;
+     hasTeam: boolean | null;
 };
 
 export type DefaultUserRoleType = "teamLeader" | "teamMember";

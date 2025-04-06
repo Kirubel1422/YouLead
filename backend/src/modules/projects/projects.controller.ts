@@ -94,4 +94,34 @@ export class ProjectController {
       next(error);
     }
   }
+
+  // Fetch my projects
+  async getMyProjects(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId, page, limit } = req.query;
+
+      const { projects, total } = await this.projectService.getMyProjects(
+        req.user.uid,
+        teamId as string,
+        {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+        }
+      );
+      res.json(new ApiResp("Sucess", 200, true, { projects, total }));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getProjectById(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await this.projectService.getProjectById(
+        req.params.projectId
+      );
+      res.json(new ApiResp("Success", 200, true, data));
+    } catch (error) {
+      next(error);
+    }
+  }
 }

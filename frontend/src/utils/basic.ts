@@ -39,11 +39,11 @@ export const getStatusColor = (status: string) => {
 
 export const getPriorityColor = (priority: string) => {
      switch (priority) {
-          case "High":
+          case "high":
                return "text-red-500 bg-red-50";
-          case "Medium":
+          case "medium":
                return "text-orange-500 bg-orange-50";
-          case "Low":
+          case "low":
                return "text-green-500 bg-green-50";
           default:
                return "text-gray-500 bg-gray-50";

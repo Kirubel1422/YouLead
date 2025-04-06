@@ -30,7 +30,7 @@ const authApi = createApi({
           // Fetch user info
           me: builder.query<IUser, { location: string }>({
                query: ({ location }) => ({
-                    url: "/me",
+                    url: `/me?path=${location}`,
                }),
           }),
      }),

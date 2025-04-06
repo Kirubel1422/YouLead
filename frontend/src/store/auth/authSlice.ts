@@ -18,6 +18,7 @@ const authSlice = createSlice({
           logout: (state) => {
                state.isAuthenticated = false;
                state.user = null;
+               state.hasTeam = false;
                localStorage.clear();
                window.location.href = "/login";
           },

@@ -18,6 +18,8 @@ export class ProjectService {
     this.mutuateDeadline = this.mutuateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteProject = this.deleteProject.bind(this);
+    this.getMyProjects = this.getMyProjects.bind(this);
+    this.getProjectById = this.getProjectById.bind(this);
   }
 
   // Create Project
@@ -259,5 +261,71 @@ export class ProjectService {
     await projectRef.delete();
 
     return { message: "Project has been deleted successfully!" };
+  }
+
+  /*
+  Fetch my projects
+  based on the decoded token
+  */
+  async getMyProjects(
+    userId: string,
+    reqTeamId: string,
+    { page, limit }: Pagination
+  ): Promise<{ total: number; projects: IProject[] }> {
+    // Parse teamid from the user
+    const userRef = db.collection(COLLECTIONS.USERS).doc(userId);
+    const userData = (await userRef.get()).data();
+    const { teamId } = userData as IUser;
+
+    // Check if the user is part of the team where the request
+    // is coming from
+    logger.info(`user id:  ${userId}`);
+    logger.info(`reqTeamId:  ${reqTeamId}  - teamId: ${teamId}`);
+    if (teamId != reqTeamId) {
+      throw new ApiError("Unauthorized to read projects.", 403);
+    }
+
+    // Read projects which contain this user
+    // as part of their project members
+    const projectsQuery = db
+      .collection(COLLECTIONS.PROJECTS)
+      .where("members", "array-contains", userId); // Query all
+    const total = (await projectsQuery.get()).size; // Size of all matching docs
+
+    const paginatedQuery = projectsQuery
+      .offset((page - 1) * limit)
+      .limit(limit);
+
+    const paginatedQueryRef = await paginatedQuery.get();
+
+    const projects = paginatedQueryRef.docs.map((doc) => ({
+      ...doc.data(),
+      id: doc.id,
+    })) as IProject[];
+
+    return { total, projects };
+  }
+
+  /**
+   *
+   * @param projectId
+   * @returns
+   */
+  async getProjectById(projectId: string): Promise<IProject> {
+    const projectSnap = await db
+      .collection(COLLECTIONS.PROJECTS)
+      .doc(projectId)
+      .get();
+
+    if (!projectSnap.exists) {
+      throw new ApiError("Project not found", 400);
+    }
+
+    const projectData = projectSnap.data() as IProject;
+
+    return {
+      ...projectData,
+      id: projectSnap.id,
+    };
   }
 }

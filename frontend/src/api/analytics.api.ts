@@ -14,9 +14,9 @@ const analyticsApi = createApi({
 
      endpoints: (builder) => ({
           getMain: builder.query<IAnalyticsMain, void>({
-               query: () => "/analytics/main",
+               query: () => "/main",
 
-               transformResponse: (response: IResponse) => (response.sucess ? response.data : ({} as IAnalyticsMain)),
+               transformResponse: (response: IResponse) => (response.success ? response.data : ({} as IAnalyticsMain)),
 
                providesTags: (result: IAnalyticsMain | undefined) =>
                     !!result ? [{ type: "Analytics" as const, id: "LIST" }] : [],

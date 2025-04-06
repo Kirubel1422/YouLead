@@ -29,6 +29,8 @@ const teamApi = createApi({
                     data: response.data,
                }),
           }),
+
+          // GET: team information
      }),
 });
 

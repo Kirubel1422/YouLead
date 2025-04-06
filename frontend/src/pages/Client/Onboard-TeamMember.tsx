@@ -113,12 +113,8 @@ export default function OnboardingTeamMember() {
      };
 
      // Fetch Invitations
-     const {
-          data: invitationsResp,
-          isFetching: fetchingMyInvs,
-          error,
-     } = useFetchMyInvitationsQuery({
-          email: user != undefined ? user.profile.email : "",
+     const { data: invitationsResp, isFetching: fetchingMyInvs } = useFetchMyInvitationsQuery({
+          email: user != null ? user?.profile?.email : "",
      });
 
      useEffect(() => {

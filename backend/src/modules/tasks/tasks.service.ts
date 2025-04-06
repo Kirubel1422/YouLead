@@ -3,15 +3,18 @@ import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IProject } from "src/interfaces/project.interface";
-import { ITask } from "src/interfaces/task.interface";
+import { ITask, ITaskDetail, TaskFilter } from "src/interfaces/task.interface";
 import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import {
   TaskAddMembersSchemaType,
   TaskSchemaType,
 } from "src/validators/task.validator";
+import { ProjectService } from "../projects/projects.service";
 
 export class TaskService {
+  projectService: ProjectService;
+
   constructor() {
     this.createTask = this.createTask.bind(this);
     this.assignTask = this.assignTask.bind(this);
@@ -19,6 +22,9 @@ export class TaskService {
     this.mutuateDeadline = this.mutuateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
+    this.fetchMyTasks = this.fetchMyTasks.bind(this);
+
+    this.projectService = new ProjectService();
   }
 
   // Create Task
@@ -109,7 +115,7 @@ export class TaskService {
           }
 
           const userData = userSnap.data() as IUser;
-          console.log(userData);
+
           transaction.update(userRef, {
             taskStatus: {
               ...userData.taskStatus,
@@ -294,5 +300,57 @@ export class TaskService {
     await taskRef.delete();
 
     return { message: "Task has been deleted successfully!" };
+  }
+
+  // Fetch my tasks
+  async fetchMyTasks(
+    userId: string,
+    deadline?: TaskFilter
+  ): Promise<{ tasks: ITaskDetail[]; total: number }> {
+    if (deadline && !["today", "upcoming", "all"].includes(deadline)) {
+      throw new ApiError("Invalid filter", 400);
+    }
+
+    const tasksQuerySnap = await db
+      .collection(COLLECTIONS.TASKS)
+      .where("assignedTo", "array-contains", userId)
+      .get();
+
+    const today = dayjs();
+
+    const tasks = await Promise.all(
+      tasksQuerySnap.docs.map(async (doc) => {
+        const data = doc.data();
+
+        if (deadline !== "all") {
+          const deadlineArray: string[] = data.deadline;
+
+          if (deadline && deadlineArray.length > 0) {
+            const lastDeadline = dayjs(deadlineArray.at(-1));
+
+            const isToday = lastDeadline.isSame(today, "day");
+            const isUpcoming = lastDeadline.isAfter(today, "day");
+
+            if (deadline === "today" && !isToday) return null;
+            if (deadline === "upcoming" && !isUpcoming) return null;
+          }
+        }
+
+        const projectDetail = await this.projectService.getProjectById(
+          data.projectId
+        );
+
+        return {
+          id: doc.id,
+          ...data,
+          projectName: projectDetail.name,
+        } as ITaskDetail;
+      })
+    );
+
+    return {
+      tasks: tasks.filter(Boolean) as ITaskDetail[], // removes null values,
+      total: tasks.filter(Boolean).length,
+    };
   }
 }

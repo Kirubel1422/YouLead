@@ -19,6 +19,7 @@ export interface IUser {
   teamId?: string;
   taskStatus?: TaskStatus;
   projectStatus?: ProjectStatus;
+  attendanceInfoId: string;
 }
 
 export interface IProfile {

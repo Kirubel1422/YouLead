@@ -4,4 +4,8 @@ export const COLLECTIONS = {
   INVITATIONS: "invitations",
   PROJECTS: "projects",
   TASKS: "tasks",
+  MESSAGES: "messages",
+  ATTENDACE: "attendance",
+  MEETINGS: "meetings",
+  ATTENDACEINFO: "attendanceInfo",
 };
