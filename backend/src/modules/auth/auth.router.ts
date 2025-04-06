@@ -14,5 +14,6 @@ route.delete(
   authMiddlewares.validateAdmin,
   authController.deleteUser
 );
+route.get("/me", authMiddlewares.validate, authController.me);
 
 export default route;

@@ -20,3 +20,8 @@ export interface IProject {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface Pagination{
+  limit: number;
+  page: number;
+}

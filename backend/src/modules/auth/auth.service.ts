@@ -11,6 +11,7 @@ export class AuthServices {
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
+    this.me = this.me.bind(this);
   }
 
   async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
@@ -134,5 +135,17 @@ export class AuthServices {
 
     // Delete from user collections
     await db.collection(COLLECTIONS.USERS).doc(uid).delete();
+  }
+
+  /**
+   * For refetching user data
+   * @param userId
+   * @returns IUser
+   */
+  async me(userId: string): Promise<{ user: IUser }> {
+    const userRef = db.collection(COLLECTIONS.USERS).doc(userId).get();
+    const userData = (await userRef).data() as IUser;
+
+    return { user: userData };
   }
 }

@@ -13,6 +13,7 @@ export class TaskController {
     this.mutateDeadline = this.mutateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.unAssign = this.unAssign.bind(this);
+    this.fetchMyTasks = this.fetchMyTasks.bind(this);
   }
 
   // Create Task Controller
@@ -88,6 +89,16 @@ export class TaskController {
     try {
       const { message } = await this.taskService.deleteTask(req.params.taskId);
       res.json(new ApiResp(message, 200));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Fetch My Tasks Controller
+  async fetchMyTasks(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await this.taskService.fetchMyTasks(req.user.uid);
+      res.json(new ApiResp("Successfully fetched tasks.", 200, true, data));
     } catch (error) {
       next(error);
     }
