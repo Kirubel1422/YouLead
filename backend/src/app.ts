@@ -13,9 +13,22 @@ import { ApiError } from "./utils/api/api.response";
 
 const app = express();
 
+app.use(
+  cors({
+    origin: (origin: any, callback: any) => {
+      if (!origin || ENV.CLIENT_URL.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
-app.use(cors());
 app.use(loggerMiddleware);
+
 app.use(cookieParser(ENV.APP_COOKIE_SECRET));
 
 app.use("/api", appRoutes);
