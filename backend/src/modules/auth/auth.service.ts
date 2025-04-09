@@ -12,6 +12,7 @@ export class AuthServices {
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
+    this.me = this.me.bind(this);
   }
 
   async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
@@ -150,5 +151,18 @@ export class AuthServices {
 
     // Delete from user collections
     await db.collection(COLLECTIONS.USERS).doc(uid).delete();
+  }
+
+  /**
+   *
+   * @param userId
+   * @returns
+   */
+  async me(userId: string): Promise<Omit<IUser, "previousPasswords">> {
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
+
+    const userData = userSnap.data() as Omit<IUser, "previousPasswords">;
+
+    return { ...userData };
   }
 }

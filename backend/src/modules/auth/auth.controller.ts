@@ -14,6 +14,7 @@ export class AuthController {
     this.userSignup = this.userSignup.bind(this);
     this.userSignin = this.userSignin.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
+    this.me = this.me.bind(this);
   }
 
   // For Signup
@@ -59,6 +60,19 @@ export class AuthController {
     try {
       await this.authService.deleteUser(req.params.uid);
       res.json(new ApiResp("Successfully deleted user!", 200, true));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async me(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userData = await this.authService.me(req.user.uid);
+      res
+        .status(200)
+        .json(
+          new ApiResp("Successfully fetched user data.", 200, true, userData)
+        );
     } catch (error) {
       next(error);
     }
