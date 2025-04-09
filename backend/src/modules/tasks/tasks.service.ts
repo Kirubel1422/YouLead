@@ -53,6 +53,7 @@ export class TaskService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       priority: "medium",
+      progress: 0,
     };
 
     await taskCollection.add(newTask);
