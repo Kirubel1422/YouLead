@@ -21,4 +21,9 @@ router.delete(
 router.put("/leave", authMiddlewares.validate, teamController.leaveTeam);
 router.put("/join", authMiddlewares.validate, teamController.joinTeamById);
 
+router.put(
+  "/remove",
+  authMiddlewares.validateAdmin,
+  teamController.removeMemberFromTeam
+);
 export default router;

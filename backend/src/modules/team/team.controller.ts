@@ -11,6 +11,7 @@ export class TeamController {
     this.deleteTeam = this.deleteTeam.bind(this);
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
+    this.removeMemberFromTeam = this.removeMemberFromTeam.bind(this);
   }
 
   async createTeam(req: Request, res: Response, next: NextFunction) {
@@ -62,6 +63,16 @@ export class TeamController {
   async fetchTeamDetail(req: Request, res: Response, next: NextFunction) {
     try {
       // const teamId = req.query.teamId as string;
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Remove member from team
+  async removeMemberFromTeam(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { memberId } = req.query;
+      await this.teamService.removeMember(memberId as string, req.user.uid);
     } catch (error) {
       next(error);
     }
