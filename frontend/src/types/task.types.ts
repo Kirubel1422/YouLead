@@ -25,4 +25,8 @@ export interface ITask {
      priority: TaskPriorityType;
 }
 
+export interface ITaskDetail extends ITask {
+     projectName: string;
+}
+
 export type TaskFilter = "today" | "upcoming" | "all" | undefined;

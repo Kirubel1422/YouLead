@@ -15,14 +15,13 @@ import { AlertCircle, BarChart3, Calendar, Clock, FileText, MoreHorizontal } fro
 import { Badge } from "@/components/ui/badge";
 import { getDaysRemaining, getPriorityColor, getStatusColor } from "@/utils/basic";
 import { useMyTasksQuery } from "@/api/tasks.api";
-import { ITask, TaskFilter } from "@/types/task.types";
+import { ITaskDetail, TaskFilter } from "@/types/task.types";
 import { useGetMainQuery } from "@/api/analytics.api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FC, useEffect, useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 import { Empty } from "@/components/placeholder/empty";
-import { useNavigate } from "react-router";
 
 const activities = [
      {
@@ -239,7 +238,7 @@ export default function TeamMemberDashboard() {
                                         {!fetchingTasks &&
                                              data &&
                                              data.tasks &&
-                                             data.tasks.map((task: ITask) => (
+                                             data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
@@ -255,7 +254,7 @@ export default function TeamMemberDashboard() {
                                         {!fetchingTasks &&
                                              data &&
                                              data.tasks &&
-                                             data.tasks.map((task: ITask) => (
+                                             data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
@@ -271,7 +270,7 @@ export default function TeamMemberDashboard() {
                                         {!fetchingTasks &&
                                              data &&
                                              data.tasks &&
-                                             data.tasks.map((task: ITask) => (
+                                             data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
@@ -359,7 +358,7 @@ export default function TeamMemberDashboard() {
 }
 
 interface TaskCardProps {
-     task: ITask;
+     task: ITaskDetail;
      isOverdue: (dateStr: string) => boolean;
      formatDate: (dateStr: string) => unknown;
 }
@@ -377,7 +376,7 @@ const TaskCard = ({ task, formatDate, isOverdue }: TaskCardProps) => {
                               </div>
 
                               <p className="text-xs text-gray-500">
-                                   {task.projectId} • Due{" "}
+                                   {task.projectName} • Due{" "}
                                    {task.deadline ? (
                                         <>
                                              {formatDate(task.deadline[0])}

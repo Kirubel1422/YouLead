@@ -137,9 +137,7 @@ export default function AppSidebar() {
                                                     <Skeleton key={i} className="h-6 w-full mb-2" />
                                                ))
                                              : take(
-                                                    Array.isArray(myProjects?.data.projects)
-                                                         ? myProjects.data.projects
-                                                         : [],
+                                                    Array.isArray(myProjects?.projects) ? myProjects?.projects : [],
                                                     3,
                                                ).map((project: IProject) => (
                                                     <SidebarMenuItem>
