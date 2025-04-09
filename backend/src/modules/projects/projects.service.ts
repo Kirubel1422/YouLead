@@ -5,10 +5,16 @@ import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IProject } from "src/interfaces/project.interface";
 import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
+import logger from "src/utils/logger/logger";
 import {
   ProjectAddMembersSchemaType,
   ProjectSchemaType,
 } from "src/validators/project.validator";
+
+interface Pagination {
+  page: number;
+  limit: number;
+}
 
 export class ProjectService {
   constructor() {

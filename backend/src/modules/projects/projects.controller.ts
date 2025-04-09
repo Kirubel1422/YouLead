@@ -13,6 +13,7 @@ export class ProjectController {
     this.mutateDeadline = this.mutateDeadline.bind(this);
     this.markAsComplete = this.markAsComplete.bind(this);
     this.removeMember = this.removeMember.bind(this);
+    this.my = this.my.bind(this);
   }
 
   // Create Project Controller
@@ -120,6 +121,27 @@ export class ProjectController {
         req.params.projectId
       );
       res.json(new ApiResp("Success", 200, true, data));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async my(req: Request, res: Response, next: NextFunction) {
+    try {
+      const projects = await this.projectService.getMyProjects(
+        req.user.uid,
+        req.query.teamId as string,
+        {
+          page: parseInt(req.query.page as string) || 1,
+          limit: parseInt(req.query.limit as string) || 8,
+        }
+      );
+
+      res
+        .status(200)
+        .json(
+          new ApiResp("Successfully fetched projects.", 200, true, projects)
+        );
     } catch (error) {
       next(error);
     }
