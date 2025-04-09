@@ -8,4 +8,5 @@ export const COLLECTIONS = {
   ATTENDACE: "attendance",
   MEETINGS: "meetings",
   ATTENDACEINFO: "attendanceInfo",
+  ACTIVITES: "activites",
 };

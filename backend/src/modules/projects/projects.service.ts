@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
-import { IProject, Pagination } from "src/interfaces/project.interface";
+import { IProject } from "src/interfaces/project.interface";
 import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
