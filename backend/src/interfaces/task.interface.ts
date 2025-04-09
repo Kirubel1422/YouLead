@@ -21,6 +21,7 @@ export interface ITask {
   teamId: string;
   deadline?: string[];
   status: TaskStatusType;
+  progress: number;
   createdAt: string;
   updatedAt: string;
   priority: TaskPriorityType;

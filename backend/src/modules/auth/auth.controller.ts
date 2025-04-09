@@ -64,7 +64,7 @@ export class AuthController {
       next(error);
     }
   }
-
+  
   async me(req: Request, res: Response, next: NextFunction) {
     try {
       const userData = await this.authService.me(req.user.uid);

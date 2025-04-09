@@ -39,6 +39,7 @@ router.delete(
   authMiddlewares.validateTeamLeader,
   taskController.deleteTask
 );
+router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
 
 router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
 

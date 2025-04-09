@@ -14,6 +14,7 @@ export class ProjectController {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.removeMember = this.removeMember.bind(this);
     this.my = this.my.bind(this);
+    this.getMyProjects = this.getMyProjects.bind(this);
   }
 
   // Create Project Controller
@@ -114,7 +115,6 @@ export class ProjectController {
       next(error);
     }
   }
-
   async getProjectById(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await this.projectService.getProjectById(

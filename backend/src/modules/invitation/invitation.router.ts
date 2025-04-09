@@ -18,5 +18,10 @@ router.post(
   authMiddlewares.validate,
   invitationController.respondInvitation
 );
+router.get(
+  "/my",
+  authMiddlewares.validate,
+  invitationController.fetchMyInvitations
+);
 
 export default router;
