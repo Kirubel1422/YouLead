@@ -41,4 +41,6 @@ router.delete(
 );
 router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
 
+router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
+
 export default router;

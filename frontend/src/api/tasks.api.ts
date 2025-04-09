@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IResponse } from "@/types/response.types";
-import { ITask, TaskFilter } from "@/types/task.types";
+import { ITaskDetail, TaskFilter } from "@/types/task.types";
 
 export interface IMyTasksResponse {
-     tasks: ITask[];
+     tasks: ITaskDetail[];
      total: number;
 }
 

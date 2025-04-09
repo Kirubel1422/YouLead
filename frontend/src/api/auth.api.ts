@@ -2,6 +2,7 @@ import { LoginSchemaType, SignUpSchemaType } from "@/schemas/auth.schema";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IUser } from "@/types/user.types";
+import { IResponse } from "@/types/response.types";
 
 const authApi = createApi({
      reducerPath: "authApi",
@@ -28,10 +29,13 @@ const authApi = createApi({
           }),
 
           // Fetch user info
-          me: builder.query<IUser, { location: string }>({
+          me: builder.query<Omit<IUser, "previousPasswords">, { location: string }>({
                query: ({ location }) => ({
                     url: `/me?path=${location}`,
                }),
+
+               transformResponse: (resp: IResponse) =>
+                    resp.success ? resp.data : ({} as Omit<IUser, "previousPasswords">),
           }),
      }),
 });

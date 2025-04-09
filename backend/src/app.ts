@@ -15,11 +15,6 @@ import initializeSocket from "./services/socket";
 
 const app = express();
 
-// Handle Socket
-const server = createServer(app);
-initializeSocket(server);
-
-app.use(express.json());
 
 // CORS
 app.use(
@@ -37,7 +32,15 @@ app.use(
   })
 );
 
+app.use(express.json());
+
+// Handle Socket
+const server = createServer(app);
+initializeSocket(server);
+
+app.use(express.json());
 app.use(loggerMiddleware);
+
 app.use(cookieParser(ENV.APP_COOKIE_SECRET));
 
 app.use("/api", appRoutes);

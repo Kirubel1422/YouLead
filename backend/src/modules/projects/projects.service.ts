@@ -11,6 +11,11 @@ import {
   ProjectSchemaType,
 } from "src/validators/project.validator";
 
+interface Pagination {
+  page: number;
+  limit: number;
+}
+
 export class ProjectService {
   constructor() {
     this.createProject = this.createProject.bind(this);

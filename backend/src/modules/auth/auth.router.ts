@@ -4,16 +4,16 @@ import validate from "src/validators/validate";
 import { AuthController } from "./auth.controller";
 import { authMiddlewares } from "./auth.middleware";
 
-const route = Router();
+const router = Router();
 const authController = new AuthController();
 
-route.post("/signup", validate(SignupSchema), authController.userSignup);
-route.post("/signin", validate(SigninSchema), authController.userSignin);
-route.delete(
+router.post("/signup", validate(SignupSchema), authController.userSignup);
+router.post("/signin", validate(SigninSchema), authController.userSignin);
+router.delete(
   "/delete/:uid",
   authMiddlewares.validateAdmin,
   authController.deleteUser
 );
-route.get("/me", authMiddlewares.validate, authController.me);
+router.get("/me", authMiddlewares.validate, authController.me);
 
-export default route;
+export default router;

@@ -1,4 +1,4 @@
-import { IAnalyticsMain } from "src/interfaces/analytis.interface";
+import { IAnalyticsMain } from "src/interfaces/analytics.interface";
 import { TaskService } from "../tasks/tasks.service";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";

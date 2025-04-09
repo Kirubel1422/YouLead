@@ -154,14 +154,15 @@ export class AuthServices {
   }
 
   /**
-   * For refetching user data
+   *
    * @param userId
-   * @returns IUser
+   * @returns
    */
-  async me(userId: string): Promise<{ user: IUser }> {
-    const userRef = db.collection(COLLECTIONS.USERS).doc(userId).get();
-    const userData = (await userRef).data() as IUser;
+  async me(userId: string): Promise<Omit<IUser, "previousPasswords">> {
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
 
-    return { user: userData };
+    const userData = userSnap.data() as Omit<IUser, "previousPasswords">;
+
+    return { ...userData };
   }
 }

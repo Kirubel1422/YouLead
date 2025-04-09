@@ -64,13 +64,15 @@ export class AuthController {
       next(error);
     }
   }
-
-  // Fetch me
+  
   async me(req: Request, res: Response, next: NextFunction) {
     try {
-      const userId = req.user.uid as string;
-      const { user } = await this.authService.me(userId);
-      res.status(200).json(user);
+      const userData = await this.authService.me(req.user.uid);
+      res
+        .status(200)
+        .json(
+          new ApiResp("Successfully fetched user data.", 200, true, userData)
+        );
     } catch (error) {
       next(error);
     }

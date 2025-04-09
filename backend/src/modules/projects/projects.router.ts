@@ -49,6 +49,7 @@ router.delete(
   authMiddlewares.validateTeamLeader,
   projectController.deleteProject
 );
+router.get("/my", authMiddlewares.validate, projectController.my);
 
 router.get("/:id", authMiddlewares.validate, projectController.getProjectById);
 export default router;
