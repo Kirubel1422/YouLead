@@ -11,9 +11,11 @@ import {
   TaskSchemaType,
 } from "src/validators/task.validator";
 import { ProjectService } from "../projects/projects.service";
+import { ActivityService } from "../activities/activities.service";
 
 export class TaskService {
   projectService: ProjectService;
+  activityService: ActivityService;
 
   constructor() {
     this.createTask = this.createTask.bind(this);
@@ -24,6 +26,7 @@ export class TaskService {
     this.deleteTask = this.deleteTask.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
 
+    this.activityService = new ActivityService();
     this.projectService = new ProjectService();
   }
 
@@ -58,13 +61,22 @@ export class TaskService {
 
     await taskCollection.add(newTask);
 
+    // Write to activity logs
+    await this.activityService.writeTaskActivity({
+      type: "create",
+      taskName: taskData.name,
+      projectId: taskData.projectId,
+      createdBy,
+    });
+
     return { message: "Task created successfully", data: newTask };
   }
 
   // Assign Task
   async assignTask(
     data: TaskAddMembersSchemaType,
-    taskId: string
+    taskId: string,
+    createdBy: string
   ): Promise<{ message: string }> {
     return await db.runTransaction(async (transaction) => {
       const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
@@ -101,6 +113,7 @@ export class TaskService {
       });
 
       // Process all members concurrently using Promise.all
+      const names: string[] = []; // For activity log purpose
       await Promise.all(
         data.assignedTo.map(async (memberId: string) => {
           const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
@@ -118,6 +131,11 @@ export class TaskService {
 
           const userData = userSnap.data() as IUser;
 
+          // Add user name for activity log
+          const fullName = `${userData.profile.firstName} ${userData.profile.lastName}`;
+          names.push(fullName);
+
+          // Increase the pending count for the user
           transaction.update(userRef, {
             taskStatus: {
               ...userData.taskStatus,
@@ -131,6 +149,16 @@ export class TaskService {
       // Add members to task
       transaction.update(taskRef, {
         assignedTo: firestore.FieldValue.arrayUnion(...data.assignedTo),
+      });
+
+      // Write to activity logs
+      await this.activityService.writeTaskActivity({
+        taskId,
+        type: "assign",
+        userIds: data.assignedTo,
+        createdBy,
+        names,
+        taskName: taskData.name,
       });
 
       return { message: "Successfully assigned Task!" };
@@ -257,6 +285,9 @@ export class TaskService {
         throw new ApiError("Project is already completed!", 400);
       }
 
+      // Completed by
+      let completedBy = null;
+
       await Promise.all(
         task.assignedTo.map(async (memberId) => {
           // Check if member exists
@@ -280,11 +311,24 @@ export class TaskService {
           };
 
           transaction.update(userRef, { taskStatus: newTaskStatus });
+
+          if (memberId === authData.uid) {
+            completedBy = `${userData.profile.firstName} ${userData.profile.lastName}`;
+          }
         })
       );
 
       // Finally mark as complete
       transaction.update(taskRef, { status: "completed" });
+
+      // Write to activity logs
+      await this.activityService.writeTaskActivity({
+        taskId,
+        type: "complete",
+        taskName: task.name,
+        projectId: task.projectId,
+        completedBy: completedBy || authData.uid,
+      });
 
       return { message: "Congratulations for completing the task!" };
     });

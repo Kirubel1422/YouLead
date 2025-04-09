@@ -13,6 +13,7 @@ export class AuthServices {
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
     this.me = this.me.bind(this);
+    this.getUserById = this.getUserById.bind(this);
   }
 
   async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
@@ -162,6 +163,19 @@ export class AuthServices {
     const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
 
     const userData = userSnap.data() as Omit<IUser, "previousPasswords">;
+
+    return { ...userData };
+  }
+
+  // GET: User detail by ID
+  async getUserById(userId: string): Promise<IUser> {
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
+
+    const userData = userSnap.data() as IUser;
+
+    if (!userData) {
+      throw new ApiError("User not found", 404, false);
+    }
 
     return { ...userData };
   }

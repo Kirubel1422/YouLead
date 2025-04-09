@@ -35,7 +35,8 @@ export class TaskController {
     try {
       const { message } = await this.taskService.assignTask(
         req.body,
-        req.params.taskId
+        req.params.taskId,
+        req.user.uid
       );
       res.json(new ApiResp(message, 200));
     } catch (error) {
