@@ -52,6 +52,7 @@ export class TaskService {
       assignedTo: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      priority: "medium",
     };
 
     await taskCollection.add(newTask);
@@ -323,7 +324,7 @@ export class TaskService {
         const data = doc.data();
 
         if (deadline !== "all") {
-          const deadlineArray: string[] = data.deadline;
+          const deadlineArray: string[] = data.deadline || [];
 
           if (deadline && deadlineArray.length > 0) {
             const lastDeadline = dayjs(deadlineArray.at(-1));
