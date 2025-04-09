@@ -5,14 +5,20 @@ import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 import { CreateTeamSchemaType } from "src/validators/team.validator";
+import { AuthServices } from "../auth/auth.service";
 
 export class TeamService {
+  private userService: AuthServices;
+
   constructor() {
     this.createTeam = this.createTeam.bind(this);
     this.deleteTeam = this.deleteTeam.bind(this);
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
     this.getTeamDetail = this.getTeamDetail.bind(this);
+    this.removeMember = this.removeMember.bind(this);
+
+    this.userService = new AuthServices();
   }
 
   // This is done by only a team leader, so after calling this api the role of
@@ -179,5 +185,26 @@ export class TeamService {
       name,
       organization,
     };
+  }
+
+  // Remove member from a team
+  async removeMember(memberId: string, leaderId: string): Promise<void> {
+    const leaderData = await this.userService.getUserById(leaderId);
+    const memberData = await this.userService.getUserById(memberId);
+
+    const memberTeamId = memberData.teamId as string;
+    const leaderTeamId = leaderData.teamId as string;
+
+    if (memberTeamId != leaderTeamId) {
+      throw new ApiError("Unauthorized to perform this action", 401);
+    }
+
+    const teamId = memberTeamId; // Either team id can be used since they're same
+
+    if (teamId == "") {
+      throw new ApiError("Team not found", 400);
+    }
+
+    await db.collection(COLLECTIONS.TEAMS).doc(teamId).delete();
   }
 }
