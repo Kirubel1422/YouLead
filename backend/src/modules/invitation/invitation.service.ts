@@ -2,6 +2,7 @@ import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import {
   IInvitation,
+  InvitationDocStatus,
   InvitationStatus,
 } from "src/interfaces/invitation.interface";
 import { IUser } from "src/interfaces/user.interface";
@@ -9,19 +10,31 @@ import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 import { InvitationSchemaType } from "src/validators/invitation.validator";
 import { TeamService } from "../team/team.service";
+import { ActivityService } from "../activities/activities.service";
+import { Helper } from "src/utils/helpers";
+import { AuthServices } from "../auth/auth.service";
 
 export class InvitationService {
   private teamService: TeamService;
+  private activityService: ActivityService;
+  private authService: AuthServices;
+  private helper: Helper;
 
   constructor() {
     this.inviteMember = this.inviteMember.bind(this);
     this.respond = this.respond.bind(this);
     this.myInvitations = this.myInvitations.bind(this);
+    this.cancelInvitation = this.cancelInvitation.bind(this);
+
+    // Constructors
     this.teamService = new TeamService();
+    this.activityService = new ActivityService();
+    this.helper = new Helper();
+    this.authService = new AuthServices();
   }
 
   // Invite a person to a team
-  async inviteMember(invitationData: InvitationSchemaType) {
+  async inviteMember(invitationData: InvitationSchemaType, userId: string) {
     return await db.runTransaction(async (transaction) => {
       // Check if team exists
       const teamSnapshot = await db
@@ -52,13 +65,27 @@ export class InvitationService {
       // New invitation
       const newInvitation: IInvitation = {
         ...invitationData,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        ...this.helper.fillTimeStamp(),
         invitationStatus: "pending",
         inviteeLeft: false,
+        status: "active",
       };
 
       const invitationRef = db.collection(COLLECTIONS.INVITATIONS).doc();
+
+      // Generate Activity Log
+      const { uid } = await this.authService.getUserByEmail(
+        invitationData.inviteeEmail
+      );
+
+      await this.activityService.writeInvitationActivity({
+        type: "invite",
+        inviteeId: uid,
+        teamId: invitationData.teamId,
+        invitationId: "",
+        userId,
+      });
+
       transaction.set(invitationRef, newInvitation);
 
       return {
@@ -111,7 +138,33 @@ export class InvitationService {
         }
 
         const { teamId } = savedInvitationData;
+
+        // Generate Activity Log
+        await this.activityService.writeInvitationActivity({
+          type: "accept",
+          inviteeId: uid,
+          teamId,
+          userId: "",
+          invitationId: "",
+        });
+
         transaction.update(userRef, { teamId });
+      } else if (invitationStatus == "rejected") {
+        // If it is already accepted
+        if (savedInvitationData.invitationStatus == "rejected") {
+          throw new ApiError("You already rejected the invitation", 400);
+        }
+
+        const { teamId } = savedInvitationData;
+
+        // Generate Activity Log
+        await this.activityService.writeInvitationActivity({
+          type: "decline",
+          inviteeId: uid,
+          teamId,
+          invitationId: "",
+          userId: "",
+        });
       }
 
       // Update the invitation status, and change user's teamId field accordingly
@@ -124,10 +177,53 @@ export class InvitationService {
     });
   }
 
+  // Cancel an Invitation
+  async cancelInvitation(userId: string, invitationId: string): Promise<void> {
+    const invitationRef = db
+      .collection(COLLECTIONS.INVITATIONS)
+      .doc(invitationId);
+    const invitationSnap = await invitationRef.get();
+
+    if (!invitationSnap.exists) {
+      throw new ApiError("Invitation not found", 400);
+    }
+
+    // team id on invitation doc
+    const { teamId: teamInvitationId, invitationStatus } =
+      invitationSnap.data() as IInvitation;
+
+    // team id from user doc
+    const { teamId, role } = await this.authService.getUserById(userId);
+
+    // Check for authorization
+    if (teamId != teamInvitationId && role != "admin") {
+      throw new ApiError("Unauthorized to perform this action", 401);
+    }
+
+    // Check if the invitation status is `pending`
+    if (invitationStatus != "pending") {
+      throw new ApiError(
+        `This invitation has already been ${invitationStatus}`,
+        400
+      );
+    }
+
+    // Generate Activity Log
+    await this.activityService.writeInvitationActivity({
+      type: "cancel",
+      teamId,
+      invitationId,
+      inviteeId: "",
+      userId,
+    });
+
+    invitationRef.update({ status: "inactive" as InvitationDocStatus });
+  }
+
   /**
    *
    * @param memberEmail
-   * Team Information
+   *  Team Information
    * Invitation Information
    */
   async myInvitations(memberEmail: string) {

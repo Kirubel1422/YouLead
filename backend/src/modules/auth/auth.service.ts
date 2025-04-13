@@ -14,6 +14,7 @@ export class AuthServices {
     this.deleteUser = this.deleteUser.bind(this);
     this.me = this.me.bind(this);
     this.getUserById = this.getUserById.bind(this);
+    this.getUserByEmail = this.getUserByEmail.bind(this);
   }
 
   async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
@@ -172,6 +173,25 @@ export class AuthServices {
     const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
 
     const userData = userSnap.data() as IUser;
+
+    if (!userData) {
+      throw new ApiError("User not found", 404, false);
+    }
+
+    return { ...userData };
+  }
+
+  // GET: User Detail by Email
+  async getUserByEmail(email: string): Promise<IUser> {
+    const userSnap = await db
+      .collection(COLLECTIONS.USERS)
+      .where("profile.email", "==", email)
+      .get();
+
+    const userData = userSnap.docs.map((doc) => ({
+      ...doc.data(),
+      uid: doc.id,
+    }))[0] as IUser;
 
     if (!userData) {
       throw new ApiError("User not found", 404, false);
