@@ -3,6 +3,7 @@ import { COLLECTIONS } from "src/constants/firebase.collections";
 import {
   AuthActivity,
   IActivity,
+  InvitationActivity,
   MeetingActivity,
   ProjectAcitivity,
   TaskActivity,
@@ -48,16 +49,29 @@ export class ActivityService {
           taskId,
           createdBy,
           projectId,
+          type,
         });
         break;
       case "create":
-        await this.onTaskCreate({ taskName, projectId, createdBy });
+        await this.onTaskCreate({ taskName, projectId, createdBy, type });
         break;
       case "complete":
-        await this.onTaskComplete({ taskId, completedBy, projectId, taskName });
+        await this.onTaskComplete({
+          taskId,
+          completedBy,
+          projectId,
+          taskName,
+          type,
+        });
         break;
       case "delete":
-        await this.onTaskDelete({ taskId, taskName, projectId, deletedBy });
+        await this.onTaskDelete({
+          taskId,
+          taskName,
+          projectId,
+          deletedBy,
+          type,
+        });
         break;
       case "mutate-deadline":
         await this.onTaskDeadlineMutation({
@@ -65,6 +79,7 @@ export class ActivityService {
           taskName,
           projectId,
           createdBy,
+          type,
         });
         break;
     }
@@ -87,12 +102,14 @@ export class ActivityService {
           createdBy,
           projectId,
           projectName,
+          type,
         });
         break;
       case "complete":
         await this.onProjectComplete({
           projectId,
           completedBy,
+          type,
         });
         break;
       case "create":
@@ -100,6 +117,7 @@ export class ActivityService {
           projectName,
           createdBy,
           teamId,
+          type,
         });
         break;
       case "delete":
@@ -108,6 +126,7 @@ export class ActivityService {
           deletedBy,
           projectId,
           projectName,
+          type,
         });
         break;
       case "mutate-deadline":
@@ -115,6 +134,7 @@ export class ActivityService {
           createdBy,
           projectId,
           projectName,
+          type,
         });
         break;
     }
@@ -128,20 +148,20 @@ export class ActivityService {
   }: Omit<MeetingActivity, "meetingId">) {
     switch (type) {
       case "create":
-        await this.onMeetingCreate({ createdBy, teamId, startTime });
+        await this.onMeetingCreate({ createdBy, teamId, startTime, type });
     }
   }
 
   async writeAuthActivity({ type, deletedBy, email, ip, uid }: AuthActivity) {
     switch (type) {
       case "delete":
-        await this.onUserDelete({ ip, email, deletedBy });
+        await this.onUserDelete({ ip, email, deletedBy, type });
         break;
       case "login":
-        await this.onUserLogin({ email, ip, uid });
+        await this.onUserLogin({ email, ip, uid, type });
         break;
       case "signup":
-        await this.onUserSignup({ email, ip, uid });
+        await this.onUserSignup({ email, ip, uid, type });
         break;
     }
   }
@@ -155,24 +175,46 @@ export class ActivityService {
   }: TeamActivity) {
     switch (type) {
       case "create":
-        await this.onTeamCreate({ email, uid, teamName });
+        await this.onTeamCreate({ email, uid, teamName, type });
         break;
       case "delete":
-        await this.onTeamDelete({ uid, teamName });
+        await this.onTeamDelete({ uid, teamName, type });
         break;
       case "remove-member":
-        await this.onTeamMemberRemove({ email, uid, teamId });
+        await this.onTeamMemberRemove({ email, uid, teamId, type });
         break;
     }
   }
 
-  async writeInvitationActivity() {}
+  async writeInvitationActivity({
+    type,
+    inviteeId,
+    teamId,
+    userId,
+    invitationId,
+  }: InvitationActivity) {
+    switch (type) {
+      case "invite":
+        await this.onInviteTeamMember({ inviteeId, teamId, userId, type });
+        break;
+      case "accept":
+        await this.onInvitationAccept({ inviteeId, teamId, type });
+        break;
+      case "cancel":
+        await this.onInvitationCancel({ userId, invitationId, type });
+        break;
+      case "decline":
+        await this.onInvitationDecline({ inviteeId, teamId, type });
+        break;
+    }
+  }
 
   // Regarding Projects, Tasks, and Meetings
   private async onTaskCreate({
     createdBy,
     taskName,
     projectId,
+    type,
   }: Partial<TaskActivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -189,6 +231,7 @@ export class ActivityService {
       entityId: projectId,
       ...this.helper.fillTimeStamp(),
       context: "task",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -199,6 +242,7 @@ export class ActivityService {
     taskName,
     projectId,
     deletedBy,
+    type,
   }: Partial<TaskActivity>) {
     const projectData = await this.projectService.getProjectById(
       projectId as string
@@ -216,6 +260,7 @@ export class ActivityService {
       entityId: projectId,
       ...this.helper.fillTimeStamp(),
       context: "task",
+      type: type as string,
     };
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
   }
@@ -226,6 +271,7 @@ export class ActivityService {
     taskId,
     createdBy,
     projectId,
+    type,
   }: Partial<TaskActivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -240,6 +286,7 @@ export class ActivityService {
     )} to ${taskName} in ${projectName}`;
 
     const activity: IActivity = {
+      type: type as string,
       activity: msg,
       superAdminOnly: false,
       entityId: taskId,
@@ -254,6 +301,7 @@ export class ActivityService {
     taskName,
     projectId,
     completedBy,
+    type,
   }: Partial<TaskActivity>) {
     const projectData = await this.projectService.getProjectById(
       projectId as string
@@ -268,6 +316,7 @@ export class ActivityService {
       entityId: taskId,
       ...this.helper.fillTimeStamp(),
       context: "task",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -278,6 +327,7 @@ export class ActivityService {
     taskName,
     projectId,
     createdBy,
+    type,
   }: Partial<TaskActivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -294,6 +344,7 @@ export class ActivityService {
       entityId: taskId,
       ...this.helper.fillTimeStamp(),
       context: "task",
+      type: type as string,
     };
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
   }
@@ -302,6 +353,7 @@ export class ActivityService {
     projectName,
     createdBy,
     teamId,
+    type,
   }: Partial<ProjectAcitivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -314,6 +366,7 @@ export class ActivityService {
       entityId: teamId,
       ...this.helper.fillTimeStamp(),
       context: "project",
+      type: type as string,
     };
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
   }
@@ -533,8 +586,74 @@ export class ActivityService {
   }
 
   // Regarding Invitations
-  //   private async onInviteTeamMember() {}
-  //   private async onInvitationAccept() {}
-  //   private async onInvitationDecline() {}
-  //   private async onInvitationCancel() {}
+  // Super Admin only
+  private async onInviteTeamMember({
+    userId, // inviter
+    inviteeId,
+    teamId,
+  }: Omit<InvitationActivity, "type">) {
+    const msg = `${userId} invited ${inviteeId} to ${teamId}`;
+
+    const activity: IActivity = {
+      activity: msg,
+      context: "invitation",
+      ...this.helper.fillTimeStamp(),
+      superAdminOnly: true,
+      entityId: teamId,
+    };
+
+    await db.collection(COLLECTIONS.ACTIVITES).add(activity);
+  }
+
+  private async onInvitationAccept({
+    inviteeId,
+    teamId,
+  }: Omit<InvitationActivity, "userId" | "type">) {
+    const msg = `${inviteeId} accepted invitation to ${teamId}`;
+
+    const activity: IActivity = {
+      activity: msg,
+      context: "invitation",
+      ...this.helper.fillTimeStamp(),
+      superAdminOnly: true,
+      entityId: teamId,
+    };
+
+    await db.collection(COLLECTIONS.ACTIVITES).add(activity);
+  }
+
+  private async onInvitationDecline({
+    inviteeId,
+    teamId,
+  }: Omit<InvitationActivity, "userId" | "type">) {
+    const msg = `${inviteeId} rejected invitation to ${teamId}`;
+
+    const activity: IActivity = {
+      activity: msg,
+      context: "invitation",
+      ...this.helper.fillTimeStamp(),
+      superAdminOnly: true,
+      entityId: teamId,
+    };
+
+    await db.collection(COLLECTIONS.ACTIVITES).add(activity);
+  }
+
+  // userId = inviterId
+  private async onInvitationCancel({
+    userId,
+    invitationId,
+  }: Omit<InvitationActivity, "type" | "inviteeId" | "teamId">) {
+    const msg = `${userId} cancelled ${invitationId}`;
+
+    const activity: IActivity = {
+      activity: msg,
+      context: "invitation",
+      ...this.helper.fillTimeStamp(),
+      superAdminOnly: true,
+      entityId: invitationId,
+    };
+
+    await db.collection(COLLECTIONS.ACTIVITES).add(activity);
+  }
 }

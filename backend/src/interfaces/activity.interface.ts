@@ -7,6 +7,7 @@ export type ActivityContext =
   | "invitation";
 
 export interface IActivity {
+  type: string;
   activity: string;
   id?: string;
   superAdminOnly: boolean;
@@ -57,4 +58,12 @@ export interface TeamActivity {
   uid: string;
   teamId?: string;
   teamName?: string;
+}
+
+export interface InvitationActivity {
+  type: "invite" | "accept" | "decline" | "cancel";
+  userId?: string;
+  teamId?: string;
+  invitationId?: string;
+  inviteeId?: string;
 }

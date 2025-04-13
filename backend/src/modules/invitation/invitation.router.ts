@@ -23,5 +23,10 @@ router.get(
   authMiddlewares.validate,
   invitationController.fetchMyInvitations
 );
+router.put(
+  "/cancel/:id",
+  authMiddlewares.validateTeamLeader,
+  invitationController.cancelInvitation
+);
 
 export default router;
