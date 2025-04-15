@@ -7,12 +7,12 @@ import {
 } from "src/interfaces/invitation.interface";
 import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
-import logger from "src/utils/logger/logger";
 import { InvitationSchemaType } from "src/validators/invitation.validator";
-import { TeamService } from "../team/team.service";
 import { ActivityService } from "../activities/activities.service";
 import { Helper } from "src/utils/helpers";
 import { AuthServices } from "../auth/auth.service";
+import logger from "src/utils/logger/logger";
+import { TeamService } from "../team/team.service";
 
 export class InvitationService {
   private teamService: TeamService;
@@ -27,10 +27,10 @@ export class InvitationService {
     this.cancelInvitation = this.cancelInvitation.bind(this);
 
     // Constructors
-    this.teamService = new TeamService();
     this.activityService = new ActivityService();
     this.helper = new Helper();
     this.authService = new AuthServices();
+    this.teamService = new TeamService();
   }
 
   // Invite a person to a team
@@ -84,6 +84,14 @@ export class InvitationService {
         teamId: invitationData.teamId,
         invitationId: "",
         userId,
+      });
+
+      // Write to Activity Log
+      await this.activityService.writeInvitationActivity({
+        inviteeId: invitationData.inviteeEmail,
+        teamId: invitationData.teamId,
+        userId,
+        type: "invite",
       });
 
       transaction.set(invitationRef, newInvitation);

@@ -35,7 +35,8 @@ export class ProjectController {
     try {
       const { message } = await this.projectService.addMembers(
         req.body,
-        req.params.projectId
+        req.params.projectId,
+        req.user.uid
       );
       res.json(new ApiResp(message, 200));
     } catch (error) {
@@ -61,7 +62,8 @@ export class ProjectController {
     try {
       const { message, data } = await this.projectService.mutuateDeadline(
         req.params.projectId,
-        req.query.newDeadline as string
+        req.query.newDeadline as string,
+        req.user.uid
       );
       res.json(new ApiResp(message, 200, true, data));
     } catch (error) {
@@ -89,7 +91,8 @@ export class ProjectController {
   async deleteProject(req: Request, res: Response, next: NextFunction) {
     try {
       const { message } = await this.projectService.deleteProject(
-        req.params.projectId
+        req.params.projectId,
+        req.user.uid
       );
       res.json(new ApiResp(message, 200));
     } catch (error) {

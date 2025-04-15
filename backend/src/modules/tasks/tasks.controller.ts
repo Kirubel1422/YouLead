@@ -8,6 +8,7 @@ export class TaskController {
 
   constructor() {
     this.taskService = new TaskService();
+
     this.createTask = this.createTask.bind(this);
     this.assignMembers = this.assignMembers.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
@@ -62,7 +63,8 @@ export class TaskController {
     try {
       const { message, data } = await this.taskService.mutuateDeadline(
         req.params.taskId,
-        req.query.newDeadline as string
+        req.query.newDeadline as string,
+        req.user.uid
       );
       res.json(new ApiResp(message, 200, true, data));
     } catch (error) {
@@ -89,7 +91,7 @@ export class TaskController {
   // Delete Task Controller
   async deleteTask(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.taskService.deleteTask(req.params.taskId);
+      const { message } = await this.taskService.deleteTask(req.params.taskId, req.user.uid);
       res.json(new ApiResp(message, 200));
     } catch (error) {
       next(error);

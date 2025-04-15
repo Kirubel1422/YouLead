@@ -42,7 +42,7 @@ export class ActivityService {
   }: TaskActivity) {
     // If action is related to a task assignment
     switch (type) {
-      case "assign":
+      case "assign": // Integrated
         await this.onTaskAssign({
           names,
           taskName,
@@ -52,10 +52,10 @@ export class ActivityService {
           type,
         });
         break;
-      case "create":
+      case "create": // Integrated
         await this.onTaskCreate({ taskName, projectId, createdBy, type });
         break;
-      case "complete":
+      case "complete": // Integrated
         await this.onTaskComplete({
           taskId,
           completedBy,
@@ -64,7 +64,7 @@ export class ActivityService {
           type,
         });
         break;
-      case "delete":
+      case "delete": // Integrated
         await this.onTaskDelete({
           taskId,
           taskName,
@@ -73,7 +73,7 @@ export class ActivityService {
           type,
         });
         break;
-      case "mutate-deadline":
+      case "mutate-deadline": // Integrated
         await this.onTaskDeadlineMutation({
           taskId,
           taskName,
@@ -96,7 +96,7 @@ export class ActivityService {
     names,
   }: ProjectAcitivity) {
     switch (type) {
-      case "assign":
+      case "assign": // Integrated
         await this.onProjectAssign({
           names,
           createdBy,
@@ -105,14 +105,14 @@ export class ActivityService {
           type,
         });
         break;
-      case "complete":
+      case "complete": // Integrated
         await this.onProjectComplete({
           projectId,
           completedBy,
           type,
         });
         break;
-      case "create":
+      case "create": // Integrated
         await this.onProjectCreate({
           projectName,
           createdBy,
@@ -120,7 +120,7 @@ export class ActivityService {
           type,
         });
         break;
-      case "delete":
+      case "delete": // Integrated
         await this.onProjectDelete({
           teamId,
           deletedBy,
@@ -129,7 +129,7 @@ export class ActivityService {
           type,
         });
         break;
-      case "mutate-deadline":
+      case "mutate-deadline": // Integrated
         await this.onProjectDeadlineMutation({
           createdBy,
           projectId,
@@ -147,20 +147,20 @@ export class ActivityService {
     type,
   }: Omit<MeetingActivity, "meetingId">) {
     switch (type) {
-      case "create":
+      case "create": // Integrated
         await this.onMeetingCreate({ createdBy, teamId, startTime, type });
     }
   }
 
   async writeAuthActivity({ type, deletedBy, email, ip, uid }: AuthActivity) {
     switch (type) {
-      case "delete":
+      case "delete": // Integrated
         await this.onUserDelete({ ip, email, deletedBy, type });
         break;
-      case "login":
+      case "login": // Integrated
         await this.onUserLogin({ email, ip, uid, type });
         break;
-      case "signup":
+      case "signup": // Integrated
         await this.onUserSignup({ email, ip, uid, type });
         break;
     }
@@ -174,13 +174,13 @@ export class ActivityService {
     teamId,
   }: TeamActivity) {
     switch (type) {
-      case "create":
+      case "create": // Integrated
         await this.onTeamCreate({ email, uid, teamName, type });
         break;
-      case "delete":
+      case "delete": // Integrated
         await this.onTeamDelete({ uid, teamName, type });
         break;
-      case "remove-member":
+      case "remove-member": // Integrated
         await this.onTeamMemberRemove({ email, uid, teamId, type });
         break;
     }
@@ -194,16 +194,16 @@ export class ActivityService {
     invitationId,
   }: InvitationActivity) {
     switch (type) {
-      case "invite":
+      case "invite": // Integrated
         await this.onInviteTeamMember({ inviteeId, teamId, userId, type });
         break;
-      case "accept":
+      case "accept": // Integrated
         await this.onInvitationAccept({ inviteeId, teamId, type });
         break;
-      case "cancel":
+      case "cancel": // Integrated
         await this.onInvitationCancel({ userId, invitationId, type });
         break;
-      case "decline":
+      case "decline": // Integrated
         await this.onInvitationDecline({ inviteeId, teamId, type });
         break;
     }
@@ -376,6 +376,7 @@ export class ActivityService {
     createdBy,
     projectId,
     projectName,
+    type,
   }: Partial<ProjectAcitivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -388,6 +389,7 @@ export class ActivityService {
       entityId: projectId,
       ...this.helper.fillTimeStamp(),
       context: "project",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -398,6 +400,7 @@ export class ActivityService {
     teamId,
     deletedBy,
     projectName,
+    type,
   }: Partial<ProjectAcitivity>) {
     const userData = await this.userService.getUserById(deletedBy as string);
 
@@ -410,6 +413,7 @@ export class ActivityService {
       entityId: teamId,
       ...this.helper.fillTimeStamp(),
       context: "project",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -418,6 +422,7 @@ export class ActivityService {
   private async onProjectComplete({
     projectId,
     completedBy,
+    type,
   }: Partial<ProjectAcitivity>) {
     const projectData = await this.projectService.getProjectById(
       projectId as string
@@ -432,6 +437,7 @@ export class ActivityService {
       entityId: projectId,
       ...this.helper.fillTimeStamp(),
       context: "project",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -441,6 +447,7 @@ export class ActivityService {
     createdBy,
     projectName,
     projectId,
+    type,
   }: Partial<ProjectAcitivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -452,6 +459,7 @@ export class ActivityService {
       entityId: projectId,
       ...this.helper.fillTimeStamp(),
       context: "project",
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -462,6 +470,7 @@ export class ActivityService {
     createdBy,
     teamId,
     startTime,
+    type,
   }: Partial<MeetingActivity>) {
     const userData = await this.userService.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
@@ -473,6 +482,7 @@ export class ActivityService {
       superAdminOnly: false,
       entityId: teamId,
       ...this.helper.fillTimeStamp(),
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -484,7 +494,8 @@ export class ActivityService {
     ip,
     email,
     uid,
-  }: Omit<AuthActivity, "deletedBy" | "type">) {
+    type,
+  }: Omit<AuthActivity, "deletedBy">) {
     const msg = `${email} registered from ${ip}`;
     const activity: IActivity = {
       activity: msg,
@@ -492,6 +503,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: uid,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -502,7 +514,8 @@ export class ActivityService {
     ip,
     email,
     uid,
-  }: Omit<AuthActivity, "deletedBy" | "type">) {
+    type,
+  }: Omit<AuthActivity, "deletedBy">) {
     const msg = `${email} signed in from ${ip}`;
     const activity: IActivity = {
       activity: msg,
@@ -510,6 +523,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: uid,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -520,7 +534,8 @@ export class ActivityService {
     ip,
     email,
     deletedBy,
-  }: Omit<AuthActivity, "type" | "uid">) {
+    type,
+  }: Omit<AuthActivity, "uid">) {
     const msg = `${deletedBy} deleted ${email} from ${ip}`;
     const activity: IActivity = {
       activity: msg,
@@ -528,6 +543,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: deletedBy,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -535,11 +551,7 @@ export class ActivityService {
 
   // Regarding Teams
   // Super Admin only
-  private async onTeamCreate({
-    email,
-    uid,
-    teamName,
-  }: Omit<TeamActivity, "type">) {
+  private async onTeamCreate({ email, uid, teamName, type }: TeamActivity) {
     const msg = `${email} created team: ${teamName}`;
     const activity: IActivity = {
       activity: msg,
@@ -547,13 +559,14 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: false,
       entityId: uid,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
   }
 
   // Super Admin only
-  private async onTeamDelete({ uid, teamName }: Partial<TeamActivity>) {
+  private async onTeamDelete({ uid, teamName, type }: Partial<TeamActivity>) {
     const userData = await this.userService.getUserById(uid as string);
     const email = userData.profile.email;
 
@@ -564,6 +577,7 @@ export class ActivityService {
       entityId: uid,
       context: "team",
       superAdminOnly: true,
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -572,6 +586,7 @@ export class ActivityService {
     email,
     uid,
     teamId,
+    type,
   }: Partial<TeamActivity>) {
     const msg = `${email} removed ${uid} from ${teamId}`;
     const activity: IActivity = {
@@ -580,6 +595,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: teamId,
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -591,7 +607,8 @@ export class ActivityService {
     userId, // inviter
     inviteeId,
     teamId,
-  }: Omit<InvitationActivity, "type">) {
+    type,
+  }: InvitationActivity) {
     const msg = `${userId} invited ${inviteeId} to ${teamId}`;
 
     const activity: IActivity = {
@@ -600,6 +617,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: teamId,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -608,7 +626,8 @@ export class ActivityService {
   private async onInvitationAccept({
     inviteeId,
     teamId,
-  }: Omit<InvitationActivity, "userId" | "type">) {
+    type,
+  }: Omit<InvitationActivity, "userId">) {
     const msg = `${inviteeId} accepted invitation to ${teamId}`;
 
     const activity: IActivity = {
@@ -617,6 +636,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: teamId,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -625,7 +645,8 @@ export class ActivityService {
   private async onInvitationDecline({
     inviteeId,
     teamId,
-  }: Omit<InvitationActivity, "userId" | "type">) {
+    type,
+  }: Omit<InvitationActivity, "userId">) {
     const msg = `${inviteeId} rejected invitation to ${teamId}`;
 
     const activity: IActivity = {
@@ -634,6 +655,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: teamId,
+      type,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
@@ -643,7 +665,8 @@ export class ActivityService {
   private async onInvitationCancel({
     userId,
     invitationId,
-  }: Omit<InvitationActivity, "type" | "inviteeId" | "teamId">) {
+    type,
+  }: Omit<InvitationActivity, "inviteeId" | "teamId">) {
     const msg = `${userId} cancelled ${invitationId}`;
 
     const activity: IActivity = {
@@ -652,6 +675,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       superAdminOnly: true,
       entityId: invitationId,
+      type: type as string,
     };
 
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);

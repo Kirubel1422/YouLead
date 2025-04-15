@@ -29,7 +29,7 @@ export class TeamController {
   // Delete team and update users' teamId field
   async deleteTeam(req: Request, res: Response, next: NextFunction) {
     try {
-      await this.teamService.deleteTeam(req.params.teamId);
+      await this.teamService.deleteTeam(req.params.teamId, req.user.uid);
       res.json(new ApiResp("Successfully deleted team", 200, true));
     } catch (error) {
       next(error);

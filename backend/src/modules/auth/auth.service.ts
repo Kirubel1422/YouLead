@@ -6,9 +6,14 @@ import { COLLECTIONS } from "src/constants/firebase.collections";
 import { ISignin, ISignupRequest } from "src/interfaces/auth.interface";
 import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
+import { ActivityService } from "../activities/activities.service";
 
 export class AuthServices {
+  private activityService: ActivityService;
+
   constructor() {
+    this.activityService = new ActivityService();
+
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
@@ -17,7 +22,10 @@ export class AuthServices {
     this.getUserByEmail = this.getUserByEmail.bind(this);
   }
 
-  async login(signinData: ISignin): Promise<{ token: string; user: IUser }> {
+  async login(
+    signinData: ISignin,
+    ip: string | undefined
+  ): Promise<{ token: string; user: IUser }> {
     const userExists = await auth
       .getUserByEmail(signinData.email)
       .catch(() => null);
@@ -49,11 +57,20 @@ export class AuthServices {
 
     const user = userDoc.data() as IUser;
 
+    // Write to Activity Log
+    await this.activityService.writeAuthActivity({
+      ip,
+      email: signinData.email,
+      uid: user.uid,
+      type: "login",
+    });
+
     return { token: idToken, user };
   }
 
   async userSignup(
-    signupData: ISignupRequest
+    signupData: ISignupRequest,
+    ip: string | undefined
   ): Promise<{ token: string; user: IUser }> {
     // Check if the user is already there
     const userExists = await auth
@@ -143,16 +160,44 @@ export class AuthServices {
 
     // return user and idToken to controller
     const { idToken } = response.data;
+
+    // Write to Activity Log
+    await this.activityService.writeAuthActivity({
+      ip,
+      email: signupData.email,
+      uid: user.uid,
+      type: "signup",
+    });
+
     return { token: idToken, user };
   }
 
-  // Delete user by uid
-  async deleteUser(uid: string) {
-    // Delete from auth
+  // Delete user by uid, userId = user performing this action.
+  async deleteUser(uid: string, userId: string, ip: string): Promise<void> {
+    const userSnap = await db.collection(COLLECTIONS.USERS).doc(uid).get();
+
+    if (!userSnap.exists) {
+      throw new ApiError("User not found", 400);
+    }
+
+    const userData = userSnap.data() as IUser;
+
+    // Edit user status in firestore collections
+    const userRef = db.collection(COLLECTIONS.USERS).doc(uid);
+    await userRef.update({
+      status: "inactive",
+    });
+
+    // Delete user from firebase authentication
     auth.deleteUser(uid);
 
-    // Delete from user collections
-    await db.collection(COLLECTIONS.USERS).doc(uid).delete();
+    // Write to Activity Log
+    await this.activityService.writeAuthActivity({
+      ip,
+      email: userData.profile.email,
+      deletedBy: userId,
+      type: "delete",
+    });
   }
 
   /**

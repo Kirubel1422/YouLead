@@ -10,6 +10,8 @@ import {
   ProjectAddMembersSchemaType,
   ProjectSchemaType,
 } from "src/validators/project.validator";
+import { ActivityService } from "../activities/activities.service";
+import { Helper } from "src/utils/helpers";
 
 interface Pagination {
   page: number;
@@ -17,7 +19,13 @@ interface Pagination {
 }
 
 export class ProjectService {
+  private activityService: ActivityService;
+  private helper: Helper;
+
   constructor() {
+    this.activityService = new ActivityService();
+    this.helper = new Helper();
+
     this.createProject = this.createProject.bind(this);
     this.addMembers = this.addMembers.bind(this);
     this.removeMember = this.removeMember.bind(this);
@@ -59,24 +67,35 @@ export class ProjectService {
 
     await projectCollection.add(newProjectData);
 
+    // Write to Activity Log
+    await this.activityService.writeProjectActivity({
+      projectName: projectData.name,
+      createdBy,
+      teamId: projectData.teamId,
+      type: "create",
+    });
+
     return { message: "Project created successfully", data: newProjectData };
   }
 
   // Add Members to Project
   async addMembers(
     data: ProjectAddMembersSchemaType,
-    projectId: string
+    projectId: string,
+    userId: string
   ): Promise<{ message: string }> {
     return await db.runTransaction(async (transaction) => {
       const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
       const projectSnap = await transaction.get(projectRef);
-      const projectData = projectSnap.data() as IProject;
 
       if (!projectSnap.exists) {
         throw new ApiError("Project does not exist", 400);
       }
 
+      const projectData = projectSnap.data() as IProject;
+
       // Process all members concurrently using Promise.all
+      const names: string[] = [];
       await Promise.all(
         data.members.map(async (memberId: string) => {
           const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
@@ -94,6 +113,10 @@ export class ProjectService {
 
           const userData = userSnap.data() as IUser;
 
+          // Append full names to `names` array
+          const fullName = this.helper.extractFullName(userData.profile);
+          names.push(fullName);
+
           transaction.update(userRef, {
             projectStatus: {
               ...userData.projectStatus,
@@ -103,6 +126,15 @@ export class ProjectService {
           });
         })
       );
+
+      // Add to Activity Log
+      await this.activityService.writeProjectActivity({
+        names,
+        createdBy: userId,
+        projectId,
+        projectName: projectData.name,
+        type: "assign",
+      });
 
       // Add members to project
       transaction.update(projectRef, {
@@ -165,7 +197,8 @@ export class ProjectService {
   // Extend and Reduce deadline
   async mutuateDeadline(
     projectId: string,
-    newDeadline: string
+    newDeadline: string,
+    userId: string
   ): Promise<{ message: string; data: IProject }> {
     if (!dayjs(newDeadline).isValid()) {
       throw new ApiError("Invalid date", 400);
@@ -183,7 +216,16 @@ export class ProjectService {
       deadline: firestore.FieldValue.arrayUnion(newDeadline),
       updatedAt: new Date().toISOString(),
     });
+
     const projectData = (await projectRef.get()).data() as IProject;
+
+    // Write to Activity Log
+    await this.activityService.writeProjectActivity({
+      createdBy: userId,
+      projectId,
+      projectName: projectData.name,
+      type: "mutate-deadline",
+    });
 
     return {
       message: "Project deadline has been changed successfully",
@@ -249,6 +291,13 @@ export class ProjectService {
         })
       );
 
+      // Write to Activity Log
+      await this.activityService.writeProjectActivity({
+        projectId,
+        completedBy: authData.uid,
+        type: "complete",
+      });
+
       transaction.update(projectRef, { status: "completed" });
 
       return { message: "Congratulations for completing the project!" };
@@ -256,7 +305,10 @@ export class ProjectService {
   }
 
   // Delete Project
-  async deleteProject(projectId: string): Promise<{ message: string }> {
+  async deleteProject(
+    projectId: string,
+    userId: string
+  ): Promise<{ message: string }> {
     const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
     const projectSnap = await projectRef.get();
 
@@ -264,7 +316,17 @@ export class ProjectService {
       throw new ApiError("Project not found", 400);
     }
 
+    const projectData = projectSnap.data() as IProject;
     await projectRef.delete();
+
+    // Write to Activity Log
+    await this.activityService.writeProjectActivity({
+      teamId: projectData.teamId,
+      deletedBy: userId,
+      projectId,
+      projectName: projectData.name,
+      type: "delete",
+    });
 
     return { message: "Project has been deleted successfully!" };
   }
