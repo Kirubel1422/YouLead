@@ -7,6 +7,9 @@ import invitationsApi from "@/api/invitations.api";
 import teamApi from "@/api/team.api";
 import analyticsApi from "@/api/analytics.api";
 import tasksApi from "@/api/tasks.api";
+import meetingApi from "@/api/meeting.api";
+import activityApi from "@/api/activities.api";
+import calendarApi from "@/api/calendar.api";
 
 const base = combineReducers({
      auth: authReducer,
@@ -23,6 +26,9 @@ const rootReducer = combineReducers({
      [teamApi.reducerPath]: teamApi.reducer,
      [analyticsApi.reducerPath]: analyticsApi.reducer,
      [tasksApi.reducerPath]: tasksApi.reducer,
+     [meetingApi.reducerPath]: meetingApi.reducer,
+     [activityApi.reducerPath]: activityApi.reducer,
+     [calendarApi.reducerPath]: calendarApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
