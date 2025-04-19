@@ -6,9 +6,11 @@ import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 import { CreateTeamSchemaType } from "src/validators/team.validator";
 import { AuthServices } from "../auth/auth.service";
+import { ActivityService } from "../activities/activities.service";
 
 export class TeamService {
   private userService: AuthServices;
+  private activityService: ActivityService;
 
   constructor() {
     this.createTeam = this.createTeam.bind(this);
@@ -18,6 +20,7 @@ export class TeamService {
     this.getTeamDetail = this.getTeamDetail.bind(this);
     this.removeMember = this.removeMember.bind(this);
 
+    this.activityService = new ActivityService();
     this.userService = new AuthServices();
   }
 
@@ -65,11 +68,19 @@ export class TeamService {
       teamId: newTeamRef.id,
     });
 
+    // Write to Activity Log
+    await this.activityService.writeTeamActivity({
+      email: leaderData.profile.email,
+      uid: leaderData.uid,
+      teamName: teamData.name,
+      type: "create",
+    });
+
     return { message: "Team created successfully!", data: teamData };
   }
 
   // Delete team
-  async deleteTeam(teamId: string) {
+  async deleteTeam(teamId: string, userId: string) {
     // Check if there is the team
     const teamRef = db.collection(COLLECTIONS.TEAMS).doc(teamId);
     const teamSnapshot = await teamRef.get();
@@ -77,6 +88,8 @@ export class TeamService {
     if (!teamSnapshot.exists) {
       throw new ApiError("Team does not exist.", 400, false);
     }
+
+    const teamData = teamSnapshot.data() as ITeam;
 
     // Find all users that belong to teamId and batch update them
     const usersSnapShot = await db
@@ -96,6 +109,16 @@ export class TeamService {
 
     // Delete team from teams collections
     await teamRef.delete();
+
+    // Write to Activity Log
+    const userDetail = await this.userService.getUserById(userId);
+    await this.activityService.writeTeamActivity({
+      email: userDetail.profile.email,
+      type: "delete",
+      uid: userId,
+      teamName: teamData.name,
+      teamId,
+    });
   }
 
   // Leave team
@@ -206,5 +229,13 @@ export class TeamService {
     }
 
     await db.collection(COLLECTIONS.TEAMS).doc(teamId).delete();
+
+    // Write to Activity Log
+    await this.activityService.writeTeamActivity({
+      email: leaderData.profile.email,
+      uid: leaderId,
+      teamId,
+      type: "remove-member",
+    });
   }
 }

@@ -224,7 +224,8 @@ export class TaskService {
   // Extend and Reduce deadline
   async mutuateDeadline(
     taskId: string,
-    newDeadline: string
+    newDeadline: string,
+    userId: string
   ): Promise<{ message: string; data: ITask }> {
     if (!dayjs(newDeadline).isValid()) {
       throw new ApiError("Invalid date", 400);
@@ -242,7 +243,17 @@ export class TaskService {
       deadline: firestore.FieldValue.arrayUnion(newDeadline),
       updatedAt: new Date().toISOString(),
     });
+
     const taskData = (await taskRef.get()).data() as ITask;
+
+    // Write to Activity Log
+    await this.activityService.writeTaskActivity({
+      taskId,
+      taskName: taskData.name,
+      projectId: taskData.projectId,
+      createdBy: userId,
+      type: "mutate-deadline",
+    })
 
     return {
       message: "Task deadline has been changed successfully",
@@ -335,15 +346,25 @@ export class TaskService {
   }
 
   // Delete Task
-  async deleteTask(taskId: string): Promise<{ message: string }> {
+  async deleteTask(taskId: string, userId: string): Promise<{ message: string }> {
     const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
     const taskSnap = await taskRef.get();
-
+    
     if (!taskSnap.exists) {
       throw new ApiError("Task not found", 400);
     }
 
+    const taskData = taskSnap.data() as ITask;
     await taskRef.delete();
+
+    // Write to Activity logs
+    await this.activityService.writeTaskActivity({
+      taskId,
+      taskName: taskData.name,
+      projectId: taskData.projectId,
+      deletedBy: userId,
+      type: "delete",
+    })
 
     return { message: "Task has been deleted successfully!" };
   }

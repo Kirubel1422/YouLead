@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation, useNavigate } from "react-router";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router";
 import Login from "./pages/Login";
 import TeamMemberDashboard from "./pages/Client/Dash-TeamMember";
 import { useDispatch, useSelector } from "react-redux";
@@ -47,10 +47,24 @@ export default function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
 
-                    <Route path="/dashboard" element={<TeamMemberDashboard />} />
-                    <Route path="/dashboard/onboarding" element={<OnboardingTeamMember />} />
-                    <Route path="/dashboard/profile" element={<Profile />} />
+                    <Route path="/dashboard" element={<DashboardGuard isAuthenticated={isAuthenticated} />}>
+                         <Route path="" element={<TeamMemberDashboard />} />
+                         <Route path="onboarding" element={<OnboardingTeamMember />} />
+                         <Route path="profile" element={<Profile />} />
+                    </Route>
                </Routes>
           </div>
      );
+}
+
+interface DashboardGuardProps {
+     isAuthenticated: boolean;
+}
+
+function DashboardGuard({ isAuthenticated }: DashboardGuardProps) {
+     if (!isAuthenticated) {
+          return <Navigate to="/login" />;
+     }
+
+     return <Outlet />;
 }

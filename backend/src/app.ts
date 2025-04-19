@@ -15,7 +15,6 @@ import initializeSocket from "./services/socket";
 
 const app = express();
 
-
 // CORS
 app.use(
   cors({
@@ -39,6 +38,7 @@ const server = createServer(app);
 initializeSocket(server);
 
 app.use(express.json());
+app.set("trust proxy", true);
 app.use(loggerMiddleware);
 
 app.use(cookieParser(ENV.APP_COOKIE_SECRET));

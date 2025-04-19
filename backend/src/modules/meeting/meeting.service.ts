@@ -10,9 +10,14 @@ import { meetingEmail } from "src/templates/meeting.template";
 import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 import { MeetingSchema } from "src/validators/meeting.validator";
+import { ActivityService } from "../activities/activities.service";
 
 export class MeetingService {
+  private activityService: ActivityService;
+
   constructor() {
+    this.activityService = new ActivityService();
+
     this.createMeeting = this.createMeeting.bind(this);
     this.updateMeeting = this.updateMeeting.bind(this);
     this.getMeetingById = this.getMeetingById.bind(this);
@@ -72,6 +77,14 @@ export class MeetingService {
           }
         })
       );
+
+      // Write to Activity Log
+      await this.activityService.writeMeetingActivity({
+        createdBy: userId,
+        teamId,
+        startTime: data.startTime,
+        type: "create",
+      })
 
       // Finally set meeting data to collection
       transaction.set(meetingRef, {

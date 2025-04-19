@@ -74,3 +74,52 @@ export const timeDifference = (dateString: string) => {
           addSuffix: true,
      });
 };
+
+export const aiResponseToHTML = (text: string) => {
+     // Convert markdown-style headers to HTML
+     let html = text
+          .replace(/^# (.*$)/gm, "<h1>$1</h1>")
+          .replace(/^## (.*$)/gm, "<h2>$1</h2>")
+          .replace(/^### (.*$)/gm, "<h3>$1</h3>")
+          .replace(/^#### (.*$)/gm, "<h4>$1</h4>");
+
+     // Convert lists
+     html = html
+          .replace(/^\* (.*$)/gm, "<li>$1</li>")
+          .replace(/(<li>.*<\/li>)+/g, "<ul>$&</ul>")
+          .replace(/^\d+\. (.*$)/gm, "<li>$1</li>")
+          .replace(/(<li>.*<\/li>)+/g, "<ol>$&</ol>");
+
+     // Convert tables (basic markdown tables)
+     html = html.replace(/(\|.+\|.+\|[\r\n]+)((?:\|.+\|.+\|[\r\n]+)+)/g, (match, header, body) => {
+          const headers = header.split("|").filter((c: any) => c.trim());
+          const rows = body.split("\n").filter((r: any) => r.trim());
+
+          let table = '<table class="ai-table"><thead><tr>';
+          headers.forEach((h: any) => {
+               table += `<th>${h.trim()}</th>`;
+          });
+          table += "</tr></thead><tbody>";
+
+          rows.forEach((row: any) => {
+               const cells = row.split("|").filter((c: string) => c.trim());
+               table += "<tr>";
+               cells.forEach((c: string) => {
+                    table += `<td>${c.trim()}</td>`;
+               });
+               table += "</tr>";
+          });
+
+          return table + "</tbody></table>";
+     });
+
+     // Convert line breaks to paragraphs when between empty lines
+     html = html.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>");
+
+     // Wrap the whole content if it's not already wrapped
+     if (!html.startsWith("<")) {
+          html = `<div class="ai-response">${html}</div>`;
+     }
+
+     return html;
+};

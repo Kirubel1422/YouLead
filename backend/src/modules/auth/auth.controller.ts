@@ -25,7 +25,8 @@ export class AuthController {
   ): Promise<void> {
     try {
       const { token, user } = await this.authService.userSignup(
-        req.body as ISignupRequest
+        req.body as ISignupRequest,
+        req.ip
       );
 
       res.cookie("token", token, cookieConfig);
@@ -45,7 +46,10 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      const { token, user } = await this.authService.login(req.body as ISignin);
+      const { token, user } = await this.authService.login(
+        req.body as ISignin,
+        req.ip
+      );
       logger.info("Logged in Successfully!  " + user.profile.email);
       res.cookie("token", token, cookieConfig);
       console.log(token);
@@ -58,13 +62,17 @@ export class AuthController {
   // For delete user
   async deleteUser(req: Request, res: Response, next: NextFunction) {
     try {
-      await this.authService.deleteUser(req.params.uid);
+      await this.authService.deleteUser(
+        req.params.uid,
+        req.user.uid,
+        req.ip as string
+      );
       res.json(new ApiResp("Successfully deleted user!", 200, true));
     } catch (error) {
       next(error);
     }
   }
-  
+
   async me(req: Request, res: Response, next: NextFunction) {
     try {
       const userData = await this.authService.me(req.user.uid);
