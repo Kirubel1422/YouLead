@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IResponse } from "@/types/response.types";
-import { ITaskDetail, TaskFilter } from "@/types/task.types";
+import { ITaskDetail, ITaskMetaData, TaskFilter } from "@/types/task.types";
 
 export interface IMyTasksResponse {
      tasks: ITaskDetail[];
@@ -31,8 +31,31 @@ const tasksApi = createApi({
                            ]
                          : [{ type: "Tasks", id: "LIST" }],
           }),
+
+          // Mark Task As Complete
+          markTaskComplete: builder.mutation<string, string>({
+               query: (taskId) => ({ url: `/complete/${taskId}`, method: "PUT" }),
+
+               transformResponse: (resp: IResponse) => (resp.success ? resp.message : ""),
+
+               invalidatesTags: (msg: string | undefined, _, id: string) =>
+                    !!msg ? [{ type: "Tasks" as const, id }] : [],
+          }),
+
+          // Update Task Progress
+          updateProgress: builder.mutation<string, ITaskMetaData>({
+               query: (taskData) => ({
+                    url: `/progress?taskId=${taskData.taskId}&progress=${taskData.progress}`,
+                    method: "PUT",
+               }),
+
+               transformResponse: (resp: IResponse) => (resp.success ? "Progress saved!" : ""),
+
+               invalidatesTags: (msg: string | undefined, _, taskData: ITaskMetaData) =>
+                    !!msg ? [{ type: "Tasks" as const, id: taskData.taskId }] : [],
+          }),
      }),
 });
 
-export const { useMyTasksQuery } = tasksApi;
+export const { useMyTasksQuery, useMarkTaskCompleteMutation, useUpdateProgressMutation } = tasksApi;
 export default tasksApi;

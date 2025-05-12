@@ -4,34 +4,59 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { EventDay } from "./EventDay";
-import { type Event, EventType } from "@/types/calendar.type";
-import { useLazyTaskPrioritizationSuggestionQuery, useMyEventsQuery } from "@/api/calendar.api";
+import { EventType } from "@/types/calendar.type";
+import { useMyEventsQuery } from "@/api/calendar.api";
 import { Button } from "@/components/ui/button";
-import { aiResponseToHTML } from "@/utils/basic";
 import { Loadable } from "@/components/state";
 import ReactMarkdown from "react-markdown";
+import { DOTENV } from "@/constants/env";
 
 interface CalendarModalProps {
      open: boolean;
      onOpenChange: (open: boolean) => void;
 }
 
+interface StreamData {
+     text: string;
+}
+
 export function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
      const [date, setDate] = useState<Date | undefined>(new Date());
      const [aiGeneratedSuggestion, setAIGeneratedSuggestion] = useState<string>("");
+     const [generating, setGenerating] = useState<boolean>(false); // For loading state while receiving sse
+     const [generatingErr, setGeneratingErr] = useState<string>(""); // SSE error
 
      // Fetch user events
      const { data: events, isFetching: fetchingEvents } = useMyEventsQuery();
 
-     // Generate task prioritization
-     const [generateSuggestion, { isLoading: loadingSuggestion }] = useLazyTaskPrioritizationSuggestionQuery();
+     // // Generate task prioritization
      const generatePrioritization = async () => {
+          setGeneratingErr("");
           try {
-               const suggestion = await generateSuggestion().unwrap();
-               const HTMLFormat = aiResponseToHTML(suggestion);
-               setAIGeneratedSuggestion(HTMLFormat);
+               const suggestion = new EventSource(DOTENV.API_ENDPOINT + "/calendar/task-prioritization", {
+                    withCredentials: true,
+               });
+
+               suggestion.onmessage = (event) => {
+                    const str: StreamData = JSON.parse(event.data);
+                    console.log(str);
+                    setAIGeneratedSuggestion((prev) => prev + str.text);
+               };
+
+               suggestion.onerror = function (error) {
+                    console.log(error);
+                    setGeneratingErr("Stream connection failed");
+               };
+
+               // Cleanup function to close connection when component unmounts
+               return () => {
+                    suggestion.close();
+               };
           } catch (error: any) {
+               setGenerating(error.message);
                console.error(error);
+          } finally {
+               setGenerating(false);
           }
      };
 
@@ -44,6 +69,7 @@ export function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
                               <span>Calendar</span>
                          </DialogTitle>
                     </DialogHeader>
+
                     <div className="p-1 overflow-x-auto">
                          <Calendar
                               mode="single"
@@ -96,66 +122,16 @@ export function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
                          />
                     </div>
 
-                    {aiGeneratedSuggestion ? (
-                         loadingSuggestion ? (
-                              <Loader2 className="animate-spin h-6 w-6 text-gray-500" />
-                         ) : (
-                              <ReactMarkdown
-                                   components={{
-                                        h1: ({ node, ...props }) => (
-                                             <h1 className="text-3xl font-bold my-4" {...props} />
-                                        ),
-                                        h2: ({ node, ...props }) => (
-                                             <h2 className="text-2xl font-semibold my-3" {...props} />
-                                        ),
-                                        h3: ({ node, ...props }) => (
-                                             <h3 className="text-xl font-medium my-2" {...props} />
-                                        ),
-                                        p: ({ node, ...props }) => (
-                                             <p className="text-base leading-6 my-2" {...props} />
-                                        ),
-                                        strong: ({ node, ...props }) => <strong className="font-semibold" {...props} />,
-                                        em: ({ node, ...props }) => <em className="italic" {...props} />,
-                                        ul: ({ node, ...props }) => (
-                                             <ul className="list-disc list-inside my-2" {...props} />
-                                        ),
-                                        ol: ({ node, ...props }) => (
-                                             <ol className="list-decimal list-inside my-2" {...props} />
-                                        ),
-                                        li: ({ node, ...props }) => <li className="ml-4 my-1" {...props} />,
-                                        table: ({ node, ...props }) => (
-                                             <table
-                                                  className="ai-table border-collapse border w-full my-4"
-                                                  {...props}
-                                             />
-                                        ),
-                                        thead: ({ node, ...props }) => <thead className="bg-gray-100" {...props} />,
-                                        tbody: ({ node, ...props }) => <tbody {...props} />,
-                                        tr: ({ node, ...props }) => <tr className="border-b" {...props} />,
-                                        th: ({ node, ...props }) => (
-                                             <th className="text-left px-4 py-2 font-semibold border" {...props} />
-                                        ),
-                                        td: ({ node, ...props }) => <td className="px-4 py-2 border" {...props} />,
-                                        a: ({ node, ...props }) => (
-                                             <a
-                                                  className="text-blue-600 hover:underline"
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  {...props}
-                                             />
-                                        ),
-                                        br: () => <br />,
-                                   }}
-                              >
-                                   {aiGeneratedSuggestion}
-                              </ReactMarkdown>
-                         )
+                    {generating ? (
+                         <Loader2 className="animate-spin h-6 w-6 text-gray-500" />
                     ) : (
-                         ""
+                         <ReactMarkdown>{aiGeneratedSuggestion}</ReactMarkdown>
                     )}
 
+                    {generatingErr && <p className="text-red-500 text-sm">{generatingErr}</p>}
+
                     <Button onClick={generatePrioritization}>
-                         <Loadable isLoading={loadingSuggestion}>AI Task Prioritization </Loadable>
+                         <Loadable isLoading={generating}>AI Task Prioritization </Loadable>
                     </Button>
                </DialogContent>
           </Dialog>

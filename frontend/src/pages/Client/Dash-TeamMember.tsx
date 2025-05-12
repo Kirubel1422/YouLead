@@ -12,7 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, BarChart3, Calendar, Clock, FileText, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getDaysRemaining, getPriorityColor, getStatusColor, take } from "@/utils/basic";
+import { formatDate, getDaysRemaining, getPriorityColor, getStatusColor, isOverdue, take } from "@/utils/basic";
 import { useMyTasksQuery } from "@/api/tasks.api";
 import { ITaskDetail, TaskFilter } from "@/types/task.types";
 import { useGetMainQuery } from "@/api/analytics.api";
@@ -28,6 +28,7 @@ import { differenceInHours, differenceInMinutes } from "date-fns";
 import { useRecentActivititesQuery } from "@/api/activities.api";
 import { IActivity } from "@/types/activity.type";
 import { CalendarModal } from "@/components/modal/calendar/Calendar";
+import TaskDetail from "@/components/modal/task/TaskDetail";
 
 export default function TeamMemberDashboard() {
      const { user } = useSelector((state: RootState) => state.base.auth);
@@ -35,6 +36,12 @@ export default function TeamMemberDashboard() {
 
      const [taskFilter, setTaskFilter] = useState<TaskFilter>(undefined);
      const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
+     const [taskDetailOpen, setTaskDetailOpen] = useState<boolean>(false);
+     const [targetTask, setTargetTask] = useState<ITaskDetail | undefined>();
+
+     if (user === null) {
+          dispatch(logout());
+     }
 
      // Fetch my tasks
      const { data, isFetching: fetchingTasks } = useMyTasksQuery(taskFilter, {
@@ -49,25 +56,6 @@ export default function TeamMemberDashboard() {
 
      // Fetch recent activities - relies on team
      const { data: recentActivities, isFetching: fetchingRecentActivities } = useRecentActivititesQuery(user.teamId);
-
-     if (user.profile === undefined) {
-          dispatch(logout());
-     }
-
-     const formatDate = (dateString: string) => {
-          const date = new Date(dateString);
-          return new Intl.DateTimeFormat("en-US", {
-               month: "short",
-               day: "numeric",
-               year: "numeric",
-          }).format(date);
-     };
-
-     const isOverdue = (dateString: string) => {
-          const today = new Date();
-          const dueDate = new Date(dateString);
-          return dueDate < today;
-     };
 
      const duration = (start: string, end: string): string => {
           const later = new Date(end);
@@ -213,9 +201,11 @@ export default function TeamMemberDashboard() {
                                              data.tasks &&
                                              data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
+                                                       setTaskDetailOpen={setTaskDetailOpen}
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
                                                        task={task}
+                                                       setTargetTask={setTargetTask}
                                                        key={task.id}
                                                   />
                                              ))}
@@ -229,6 +219,8 @@ export default function TeamMemberDashboard() {
                                              data.tasks &&
                                              data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
+                                                       setTargetTask={setTargetTask}
+                                                       setTaskDetailOpen={setTaskDetailOpen}
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
                                                        task={task}
@@ -245,6 +237,8 @@ export default function TeamMemberDashboard() {
                                              data.tasks &&
                                              data.tasks.map((task: ITaskDetail) => (
                                                   <TaskCard
+                                                       setTargetTask={setTargetTask}
+                                                       setTaskDetailOpen={setTaskDetailOpen}
                                                        isOverdue={isOverdue}
                                                        formatDate={formatDate}
                                                        task={task}
@@ -324,6 +318,9 @@ export default function TeamMemberDashboard() {
                               </Card>
                          </div>
                     </div>
+                    {taskDetailOpen && (
+                         <TaskDetail open={taskDetailOpen} selectedTask={targetTask} setOpen={setTaskDetailOpen} />
+                    )}
                     {calendarOpen && <CalendarModal open={calendarOpen} onOpenChange={setCalendarOpen} />}
                </main>
           </Layout>
@@ -334,9 +331,11 @@ interface TaskCardProps {
      task: ITaskDetail;
      isOverdue: (dateStr: string) => boolean;
      formatDate: (dateStr: string) => unknown;
+     setTaskDetailOpen: (state: boolean) => void;
+     setTargetTask: (task: ITaskDetail) => void;
 }
 
-const TaskCard = ({ task, formatDate, isOverdue }: TaskCardProps) => {
+const TaskCard = ({ task, formatDate, isOverdue, setTaskDetailOpen, setTargetTask }: TaskCardProps) => {
      return (
           <Card key={task.id} className="overflow-hidden">
                <CardContent className="p-0">
@@ -382,7 +381,14 @@ const TaskCard = ({ task, formatDate, isOverdue }: TaskCardProps) => {
                                         </Button>
                                    </DropdownMenuTrigger>
                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>View Details</DropdownMenuItem>
+                                        <DropdownMenuItem
+                                             onClick={() => {
+                                                  setTargetTask(task);
+                                                  setTaskDetailOpen(true);
+                                             }}
+                                        >
+                                             View Details
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem>Mark as Complete</DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem>Remove</DropdownMenuItem>
