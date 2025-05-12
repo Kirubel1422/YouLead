@@ -33,7 +33,6 @@ export class ProjectService {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteProject = this.deleteProject.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
-    this.getProjectById = this.getProjectById.bind(this);
   }
 
   // Create Project
@@ -379,7 +378,7 @@ export class ProjectService {
    * @param projectId
    * @returns
    */
-  async getProjectById(projectId: string): Promise<IProject> {
+  static async getProjectById(projectId: string): Promise<IProject> {
     const projectSnap = await db
       .collection(COLLECTIONS.PROJECTS)
       .doc(projectId)

@@ -6,6 +6,7 @@ import { IUser } from "src/interfaces/user.interface";
 import { ProjectStatus } from "src/interfaces/project.interface";
 import { TaskStatus } from "src/interfaces/task.interface";
 import dayjs from "dayjs";
+import { IMeeting } from "src/interfaces/meeting.interface";
 
 export class AnalyticsService {
   private taskService: TaskService;
@@ -27,15 +28,28 @@ export class AnalyticsService {
 
     const { pending: activeProjects } = userData.projectStatus as ProjectStatus;
 
+    // Query meetings
+    const meetingsQ = db
+      .collection(COLLECTIONS.MEETINGS)
+      .where("attendees", "array-contains", userId)
+      .where("startTime", ">=", new Date(Date.now()).toISOString())
+      .orderBy("startTime");
+
+    const meetingsSnap = await meetingsQ.get();
+    const meetingsData = meetingsSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as IMeeting[];
+
     if (total === 0) {
       return {
         activeProjects: activeProjects,
         completionRate: 1,
 
-        latestMeeting: new Date().toISOString(),
+        latestMeeting: meetingsData[0].startTime,
         tasksDueSoon: 0,
         tasksThisWeek: 0,
-        upcomingMeetings: 0, // Adjust this one after adding meeting collection
+        upcomingMeetings: meetingsData.length,
       };
     }
 
@@ -45,6 +59,7 @@ export class AnalyticsService {
 
     let tasksThisWeek = 0; // Week - 7days
     let tasksDueSoon = 0; // Month - 30days
+
     for (const task of tasks) {
       if (task.deadline && task.status === "pending") {
         const lastIndex = task.deadline.length - 1;
@@ -63,10 +78,10 @@ export class AnalyticsService {
       activeProjects: activeProjects,
       completionRate: parseFloat((completedTasks / total).toFixed(3)),
 
-      latestMeeting: new Date().toISOString(),
+      latestMeeting: meetingsData[0].startTime,
       tasksDueSoon,
       tasksThisWeek,
-      upcomingMeetings: 0, // Adjust this one after adding meeting collection
+      upcomingMeetings: meetingsData.length,
     };
   }
 }

@@ -11,12 +11,15 @@ import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 import { MeetingSchema } from "src/validators/meeting.validator";
 import { ActivityService } from "../activities/activities.service";
+import { Helper } from "src/utils/helpers";
 
 export class MeetingService {
   private activityService: ActivityService;
+  private helper: Helper;
 
   constructor() {
     this.activityService = new ActivityService();
+    this.helper = new Helper();
 
     this.createMeeting = this.createMeeting.bind(this);
     this.updateMeeting = this.updateMeeting.bind(this);
@@ -59,22 +62,24 @@ export class MeetingService {
           const userRef = db.collection(COLLECTIONS.USERS).doc(attendee);
           const userSnap = await transaction.get(userRef);
 
-          if (userSnap.exists) {
-            const user = userSnap.data() as IUser;
-
-            // Check if the user is part of another team
-            if (user.teamId != teamId) {
-              logger.warn(
-                `User id: ${user.uid} can't be added to this meeting as its not part of this team.`
-              );
-              return undefined;
-            }
-
-            return {
-              email: user.profile.email,
-              firstName: user.profile.firstName,
-            };
+          if (!userSnap.exists) {
+            throw new ApiError("User not found", 400);
           }
+
+          const user = userSnap.data() as IUser;
+
+          // Check if the user is part of another team
+          if (user.teamId != teamId) {
+            logger.warn(
+              `User id: ${user.uid} can't be added to this meeting as its not part of this team.`
+            );
+            return undefined;
+          }
+
+          return {
+            email: user.profile.email,
+            firstName: user.profile.firstName,
+          };
         })
       );
 
@@ -84,13 +89,14 @@ export class MeetingService {
         teamId,
         startTime: data.startTime,
         type: "create",
-      })
+      });
 
       // Finally set meeting data to collection
       transaction.set(meetingRef, {
         ...data,
         status: "scheduled",
         organizerId: userId,
+        ...this.helper.fillTimeStamp(),
       });
       logger.info("Meeting document set.");
 
@@ -161,56 +167,21 @@ export class MeetingService {
    * @param days
    * @returns
    */
-  async upcomingMeetings(
-    userId: string,
-    days: number = 30
-  ): Promise<{ latestMeeting: string; upcomingMeetings: number }> {
-    const meetingSnap = await db.collection(COLLECTIONS.MEETINGS).get();
+  async upcomingMeetings(userId: string): Promise<IMeeting[]> {
+    // Query meetings
+    const meetingsQ = db
+      .collection(COLLECTIONS.MEETINGS)
+      .where("attendees", "array-contains", userId)
+      .where("startTime", ">=", new Date(Date.now()).toISOString())
+      .orderBy("startTime");
 
-    const minDay = dayjs();
-    const maxDay = dayjs().add(days, "day");
+    const meetingsSnap = await meetingsQ.get();
+    const meetingsData = meetingsSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as IMeeting[];
 
-    let upcomingMeetings = 0;
-    const meetings = await Promise.all(
-      meetingSnap.docs.map(async (doc) => {
-        const savedMeeting = doc.data() as Omit<IMeeting, "id">;
-
-        if (Object.keys(savedMeeting).length === 0) {
-          return null;
-        }
-
-        const meetingTime = dayjs(savedMeeting.startTime);
-        const isBefore = meetingTime.isBefore(maxDay);
-        const isAfter = meetingTime.isAfter(minDay);
-
-        const hasUser = savedMeeting.attendees.some(
-          (attendeeId: string) => attendeeId === userId
-        );
-        const valid = isBefore && isAfter && hasUser;
-
-        if (valid) {
-          upcomingMeetings++; // Count the dates in required range 0-30 days
-          return meetingTime;
-        }
-      })
-    );
-
-    // If no meeting in the required range
-    if (meetings.length === 0) {
-      return {
-        latestMeeting: "",
-        upcomingMeetings: 0,
-      };
-    }
-
-    // Sort to find the latest meeting
-    const sortedMeetings = meetings.filter(Boolean).sort();
-    const latestMeeting = sortedMeetings.at(-1)?.toISOString() as string;
-
-    return {
-      latestMeeting,
-      upcomingMeetings,
-    };
+    return meetingsData;
   }
 
   /**

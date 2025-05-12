@@ -18,7 +18,7 @@ export class AuthServices {
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
     this.me = this.me.bind(this);
-    this.getUserById = this.getUserById.bind(this);
+
     this.getUserByEmail = this.getUserByEmail.bind(this);
   }
 
@@ -214,7 +214,7 @@ export class AuthServices {
   }
 
   // GET: User detail by ID
-  async getUserById(userId: string): Promise<IUser> {
+  static async getUserById(userId: string): Promise<IUser> {
     const userSnap = await db.collection(COLLECTIONS.USERS).doc(userId).get();
 
     const userData = userSnap.data() as IUser;

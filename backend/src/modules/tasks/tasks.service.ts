@@ -3,7 +3,12 @@ import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IProject } from "src/interfaces/project.interface";
-import { ITask, ITaskDetail, TaskFilter } from "src/interfaces/task.interface";
+import {
+  type ITask,
+  type ITaskDetail,
+  type ITaskMetaData,
+  type TaskFilter,
+} from "src/interfaces/task.interface";
 import { IUser, Role } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import {
@@ -12,6 +17,7 @@ import {
 } from "src/validators/task.validator";
 import { ProjectService } from "../projects/projects.service";
 import { ActivityService } from "../activities/activities.service";
+import logger from "src/utils/logger/logger";
 
 export class TaskService {
   projectService: ProjectService;
@@ -25,6 +31,7 @@ export class TaskService {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteTask = this.deleteTask.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
+    this.updateProgress = this.updateProgress.bind(this);
 
     this.activityService = new ActivityService();
     this.projectService = new ProjectService();
@@ -253,7 +260,7 @@ export class TaskService {
       projectId: taskData.projectId,
       createdBy: userId,
       type: "mutate-deadline",
-    })
+    });
 
     return {
       message: "Task deadline has been changed successfully",
@@ -346,10 +353,13 @@ export class TaskService {
   }
 
   // Delete Task
-  async deleteTask(taskId: string, userId: string): Promise<{ message: string }> {
+  async deleteTask(
+    taskId: string,
+    userId: string
+  ): Promise<{ message: string }> {
     const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
     const taskSnap = await taskRef.get();
-    
+
     if (!taskSnap.exists) {
       throw new ApiError("Task not found", 400);
     }
@@ -364,7 +374,7 @@ export class TaskService {
       projectId: taskData.projectId,
       deletedBy: userId,
       type: "delete",
-    })
+    });
 
     return { message: "Task has been deleted successfully!" };
   }
@@ -403,7 +413,7 @@ export class TaskService {
           }
         }
 
-        const projectDetail = await this.projectService.getProjectById(
+        const projectDetail = await ProjectService.getProjectById(
           data.projectId
         );
 
@@ -419,5 +429,73 @@ export class TaskService {
       tasks: tasks.filter(Boolean) as ITaskDetail[], // removes null values,
       total: tasks.filter(Boolean).length,
     };
+  }
+
+  // Update Progress
+  async updateProgress(
+    userId: string,
+    userRole: Role,
+    taskData: ITaskMetaData
+  ): Promise<{ newProgressLevel: number }> {
+    logger.info(`User Id: ${userId} started to update task progress.`);
+    logger.info(`Task Id: ${taskData.taskId}`);
+
+    // Check if the task exists
+    const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskData.taskId);
+
+    const taskSnap = await taskRef.get();
+
+    if (!taskSnap.exists) {
+      throw new ApiError("Task doesn't exist.", 400);
+    }
+
+    // Check if the user is either ADMIN or Part of `assignedTo` field
+    const taskDetail = taskSnap.data() as ITask;
+
+    // If user id did not create the task or not an admin
+    if (userRole == "teamLeader" && taskDetail.createdBy != userId) {
+      logger.error("Neither task creator nor admin");
+      throw new ApiError(
+        "You can't update this task. You are not assigned to it.",
+        401
+      );
+    }
+
+    if (userRole === "teamMember") {
+      const { assignedTo } = taskDetail;
+
+      if (!assignedTo.some((memId: string) => memId == userId)) {
+        logger.error(
+          "User is not assigned to the task. So it can't update the progress."
+        );
+        throw new ApiError(
+          "You can't update this task. You are not assigned to it.",
+          401
+        );
+      }
+    }
+
+    // Check if the task progress is not decreased.
+    // Allow decreasing by admin | teamLeader
+    const { progress } = taskData;
+    if (isNaN(progress) || progress < 0 || progress > 100) {
+      throw new ApiError("Invalid progress value", 400);
+    }
+
+    // Previous progress level
+    const prevProgressLvl = taskDetail.progress;
+
+    // Check if a member is trying to deprogress
+    if (
+      !["admin", "teamLeader"].some((role: string) => role == userRole) &&
+      prevProgressLvl > progress
+    ) {
+      throw new ApiError("Invalid progress value", 400);
+    }
+
+    // Update task
+    taskRef.update({ progress: taskData.progress });
+
+    return { newProgressLevel: progress };
   }
 }
