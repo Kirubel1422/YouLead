@@ -37,6 +37,21 @@ export const getStatusColor = (status: string) => {
      }
 };
 
+export const isOverdue = (dateString: string) => {
+     const today = new Date();
+     const dueDate = new Date(dateString);
+     return dueDate < today;
+};
+
+export const formatDate = (dateString: string) => {
+     const date = new Date(dateString);
+     return new Intl.DateTimeFormat("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+     }).format(date);
+};
+
 export const getPriorityColor = (priority: string) => {
      switch (priority) {
           case "high":

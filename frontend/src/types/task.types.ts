@@ -29,4 +29,9 @@ export interface ITaskDetail extends ITask {
      projectName: string;
 }
 
+export interface ITaskMetaData {
+     taskId: string;
+     progress: number;
+}
+
 export type TaskFilter = "today" | "upcoming" | "all" | undefined;
