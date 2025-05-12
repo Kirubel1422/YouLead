@@ -41,6 +41,9 @@ router.delete(
 );
 router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
 
-router.get("/my", authMiddlewares.validate, taskController.fetchMyTasks);
-
+router.put(
+  "/progress",
+  authMiddlewares.validate,
+  taskController.updateProgress
+);
 export default router;

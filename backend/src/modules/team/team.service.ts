@@ -9,7 +9,6 @@ import { AuthServices } from "../auth/auth.service";
 import { ActivityService } from "../activities/activities.service";
 
 export class TeamService {
-  private userService: AuthServices;
   private activityService: ActivityService;
 
   constructor() {
@@ -17,11 +16,9 @@ export class TeamService {
     this.deleteTeam = this.deleteTeam.bind(this);
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
-    this.getTeamDetail = this.getTeamDetail.bind(this);
     this.removeMember = this.removeMember.bind(this);
 
     this.activityService = new ActivityService();
-    this.userService = new AuthServices();
   }
 
   // This is done by only a team leader, so after calling this api the role of
@@ -111,7 +108,7 @@ export class TeamService {
     await teamRef.delete();
 
     // Write to Activity Log
-    const userDetail = await this.userService.getUserById(userId);
+    const userDetail = await AuthServices.getUserById(userId);
     await this.activityService.writeTeamActivity({
       email: userDetail.profile.email,
       type: "delete",
@@ -181,7 +178,7 @@ export class TeamService {
    * @param teamId
    * @returns
    */
-  async getTeamDetail(teamId: string): Promise<Partial<ITeamDetail>> {
+  static async getTeamDetail(teamId: string): Promise<Partial<ITeamDetail>> {
     // Fetch the team data related to the invitation
     const teamRef = await db.collection(COLLECTIONS.TEAMS).doc(teamId).get();
 
@@ -212,8 +209,8 @@ export class TeamService {
 
   // Remove member from a team
   async removeMember(memberId: string, leaderId: string): Promise<void> {
-    const leaderData = await this.userService.getUserById(leaderId);
-    const memberData = await this.userService.getUserById(memberId);
+    const leaderData = await AuthServices.getUserById(leaderId);
+    const memberData = await AuthServices.getUserById(memberId);
 
     const memberTeamId = memberData.teamId as string;
     const leaderTeamId = leaderData.teamId as string;

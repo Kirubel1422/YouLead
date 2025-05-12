@@ -7,7 +7,8 @@ import taskRoutes from "./tasks/tasks.router";
 import analyticsRoutes from "./analytics/analytics.router";
 import meetingRouter from "./meeting/meeting.router";
 import attendanceRouter from "./attendance/attendance.router";
-
+import activityRoutes from "./activities/activities.router";
+import calendarRoutes from "./calendar/calendar.router";
 
 const router = Router();
 
@@ -19,5 +20,7 @@ router.use("/tasks", taskRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/meeting", meetingRouter);
 router.use("/attendance", attendanceRouter);
+router.use("/activities", activityRoutes);
+router.use("/calendar", calendarRoutes);
 
 export default router;

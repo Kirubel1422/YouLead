@@ -27,6 +27,12 @@ router.put(
   meetingController.addToMeeting
 );
 
+router.get(
+  "/upcoming",
+  authMiddlewares.validate,
+  meetingController.getUpcomingMeetings
+);
+
 router.get("/:id", authMiddlewares.validate, meetingController.getMeetingById);
 
 export default router;

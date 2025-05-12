@@ -30,3 +30,8 @@ export interface ITask {
 export interface ITaskDetail extends ITask {
   projectName: string;
 }
+
+export interface ITaskMetaData {
+  taskId: string;
+  progress: number;
+}

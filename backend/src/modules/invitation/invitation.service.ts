@@ -15,7 +15,6 @@ import logger from "src/utils/logger/logger";
 import { TeamService } from "../team/team.service";
 
 export class InvitationService {
-  private teamService: TeamService;
   private activityService: ActivityService;
   private authService: AuthServices;
   private helper: Helper;
@@ -30,7 +29,6 @@ export class InvitationService {
     this.activityService = new ActivityService();
     this.helper = new Helper();
     this.authService = new AuthServices();
-    this.teamService = new TeamService();
   }
 
   // Invite a person to a team
@@ -201,7 +199,7 @@ export class InvitationService {
       invitationSnap.data() as IInvitation;
 
     // team id from user doc
-    const { teamId, role } = await this.authService.getUserById(userId);
+    const { teamId, role } = await AuthServices.getUserById(userId);
 
     // Check for authorization
     if (teamId != teamInvitationId && role != "admin") {
@@ -258,7 +256,7 @@ export class InvitationService {
       for (const invitationDoc of invitationsRef.docs) {
         // Fetch the team data related to the invitation
         const teamId = invitationDoc.data().teamId;
-        const teamDetailInfo = await this.teamService.getTeamDetail(teamId);
+        const teamDetailInfo = await TeamService.getTeamDetail(teamId);
 
         // Clean up some keys from object
         const invitationData = invitationDoc.data();

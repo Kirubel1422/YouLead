@@ -3,6 +3,7 @@ import logger from "../logger/logger";
 import { ApiError, ApiResp } from "../api/api.response";
 import { AxiosError } from "axios";
 import { cookieConfig } from "src/configs/cookie";
+import { GoogleGenerativeAIError } from "@google/generative-ai";
 
 export async function errorHandler(
   req: Request,
@@ -12,6 +13,18 @@ export async function errorHandler(
 ) {
   // Log all errors no matter what
   logger.error(`${error}`);
+
+  if (error instanceof GoogleGenerativeAIError) {
+    const customError = error as any;
+    for (const err of customError.errorDetails) {
+      if (err["@type"] == "type.googleapis.com/google.rpc.RetryInfo") {
+        return res
+          .status(500)
+          .json(new ApiError("Please retry after " + err.retryDelay, 500));
+      }
+    }
+    return res.status(500).json(new ApiError("Server is busy.", 500, false));
+  }
 
   // Firebase errors
   if (error instanceof AxiosError) {

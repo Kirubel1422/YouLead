@@ -13,21 +13,48 @@ import { AuthServices } from "../auth/auth.service";
 // import { TaskService } from "../tasks/tasks.service";
 import { ProjectService } from "../projects/projects.service";
 import { Helper } from "src/utils/helpers";
+import logger from "src/utils/logger/logger";
 
 export class ActivityService {
-  private userService: AuthServices;
-  //   private taskService: TaskService;
-  private projectService: ProjectService;
   private helper: Helper;
 
   constructor() {
-    // this.taskService = new TaskService();
-    this.userService = new AuthServices();
-    this.projectService = new ProjectService();
-
     this.helper = new Helper();
+
+    // Bind entry functions
+    this.writeTaskActivity = this.writeTaskActivity.bind(this);
+    this.writeProjectActivity = this.writeProjectActivity.bind(this);
+    this.writeMeetingActivity = this.writeMeetingActivity.bind(this);
+    this.writeAuthActivity = this.writeAuthActivity.bind(this);
+    this.writeInvitationActivity = this.writeInvitationActivity.bind(this);
+    this.writeTeamActivity = this.writeTeamActivity.bind(this);
+    this.recentActivities = this.recentActivities.bind(this);
   }
 
+  // ------- Related with the activities module ---------- //
+  async recentActivities(teamId: string): Promise<IActivity[]> {
+    // Filter by teamId and return those which are not for super admin only
+    logger.info(`Fetching activities for teamId = ${teamId}`);
+
+    const activitiesQ = db
+      .collection(COLLECTIONS.ACTIVITES)
+      .where("entityId", "==", teamId)
+      .where("superAdminOnly", "==", false)
+      .where("context", "!=", "auth")
+      .orderBy("updatedAt");
+
+    const recentActivitiesSnap = await activitiesQ.get();
+    const recentActivities = recentActivitiesSnap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as IActivity[];
+
+    logger.info(`Fetching Complete`);
+
+    return recentActivities;
+  }
+
+  // ------- Not Related with activities module -----------//
   // Interactions with other classes
   async writeTaskActivity({
     type,
@@ -216,10 +243,10 @@ export class ActivityService {
     projectId,
     type,
   }: Partial<TaskActivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
     const projectName = projectData.name;
@@ -244,12 +271,12 @@ export class ActivityService {
     deletedBy,
     type,
   }: Partial<TaskActivity>) {
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
     const projectName = projectData.name;
 
-    const userData = await this.userService.getUserById(deletedBy as string);
+    const userData = await AuthServices.getUserById(deletedBy as string);
 
     const fullName = this.helper.extractFullName(userData.profile);
     const msg = `${fullName} deleted ${taskName} in ${projectName}`;
@@ -273,10 +300,10 @@ export class ActivityService {
     projectId,
     type,
   }: Partial<TaskActivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
     const projectName = projectData.name;
@@ -303,7 +330,7 @@ export class ActivityService {
     completedBy,
     type,
   }: Partial<TaskActivity>) {
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
     const projectName = projectData.name;
@@ -329,9 +356,9 @@ export class ActivityService {
     createdBy,
     type,
   }: Partial<TaskActivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
 
@@ -355,7 +382,7 @@ export class ActivityService {
     teamId,
     type,
   }: Partial<ProjectAcitivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
     const msg = `${fullName} created ${projectName}.`;
@@ -378,7 +405,7 @@ export class ActivityService {
     projectName,
     type,
   }: Partial<ProjectAcitivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
     const msg = `${fullName} assigned ${names?.join(", ")} to ${projectName}`;
@@ -402,7 +429,7 @@ export class ActivityService {
     projectName,
     type,
   }: Partial<ProjectAcitivity>) {
-    const userData = await this.userService.getUserById(deletedBy as string);
+    const userData = await AuthServices.getUserById(deletedBy as string);
 
     const fullName = this.helper.extractFullName(userData.profile);
     const msg = `${fullName} deleted ${projectName}`;
@@ -424,7 +451,7 @@ export class ActivityService {
     completedBy,
     type,
   }: Partial<ProjectAcitivity>) {
-    const projectData = await this.projectService.getProjectById(
+    const projectData = await ProjectService.getProjectById(
       projectId as string
     );
     const projectName = projectData.name;
@@ -449,7 +476,7 @@ export class ActivityService {
     projectId,
     type,
   }: Partial<ProjectAcitivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
     const msg = `${fullName} changed the deadline of ${projectName}`;
@@ -472,10 +499,12 @@ export class ActivityService {
     startTime,
     type,
   }: Partial<MeetingActivity>) {
-    const userData = await this.userService.getUserById(createdBy as string);
+    const userData = await AuthServices.getUserById(createdBy as string);
     const fullName = this.helper.extractFullName(userData.profile);
 
-    const msg = `${fullName} scheduled meeting for ${startTime}`;
+    const msg = `${fullName} scheduled meeting for ${this.helper.formatStandardDate(
+      startTime as string
+    )}`;
     const activity: IActivity = {
       activity: msg,
       context: "meeting",
@@ -567,7 +596,7 @@ export class ActivityService {
 
   // Super Admin only
   private async onTeamDelete({ uid, teamName, type }: Partial<TeamActivity>) {
-    const userData = await this.userService.getUserById(uid as string);
+    const userData = await AuthServices.getUserById(uid as string);
     const email = userData.profile.email;
 
     const msg = `${email} deleted ${teamName}`;

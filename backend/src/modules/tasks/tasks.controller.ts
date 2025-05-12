@@ -1,7 +1,7 @@
 import { ApiResp } from "src/utils/api/api.response";
 import { Request, Response, NextFunction } from "express";
 import { TaskService } from "./tasks.service";
-import { TaskFilter } from "src/interfaces/task.interface";
+import { ITaskMetaData, TaskFilter } from "src/interfaces/task.interface";
 
 export class TaskController {
   private taskService: TaskService;
@@ -16,6 +16,7 @@ export class TaskController {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.unAssign = this.unAssign.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
+    this.updateProgress = this.updateProgress.bind(this);
   }
 
   // Create Task Controller
@@ -91,7 +92,10 @@ export class TaskController {
   // Delete Task Controller
   async deleteTask(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.taskService.deleteTask(req.params.taskId, req.user.uid);
+      const { message } = await this.taskService.deleteTask(
+        req.params.taskId,
+        req.user.uid
+      );
       res.json(new ApiResp(message, 200));
     } catch (error) {
       next(error);
@@ -106,6 +110,24 @@ export class TaskController {
         req.query.deadline as TaskFilter
       );
       res.json(new ApiResp("Successfully fetched tasks.", 200, true, data));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateProgress(req: Request, res: Response, next: NextFunction) {
+    try {
+      const taskData = {
+        progress: parseInt(req.query.progress as string),
+        taskId: req.query.taskId,
+      } as ITaskMetaData;
+
+      const data = await this.taskService.updateProgress(
+        req.user.uid,
+        req.user.role,
+        taskData
+      );
+      res.status(200).json(new ApiResp("Progress updated", 200, true, data));
     } catch (error) {
       next(error);
     }

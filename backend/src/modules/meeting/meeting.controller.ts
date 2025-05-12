@@ -10,6 +10,7 @@ export class MeetingController {
     this.updateMeeting = this.updateMeeting.bind(this);
     this.getMeetingById = this.getMeetingById.bind(this);
     this.addToMeeting = this.addToMeeting.bind(this);
+    this.getUpcomingMeetings = this.getUpcomingMeetings.bind(this);
   }
 
   async createMeeting(req: Request, res: Response, next: NextFunction) {
@@ -68,6 +69,25 @@ export class MeetingController {
         req.user.uid,
         req.params.id
       );
+
+      res
+        .status(201)
+        .json(
+          new ApiResp(`Successfully added ${req.user.uid} to meeting.`, 201)
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getUpcomingMeetings(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await this.meetingService.upcomingMeetings(req.user.uid);
+      res
+        .status(200)
+        .json(
+          new ApiResp("Successfully fetched upcoming meetings", 200, true, data)
+        );
     } catch (error) {
       next(error);
     }
