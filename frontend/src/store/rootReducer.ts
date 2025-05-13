@@ -1,6 +1,9 @@
 import { combineReducers } from "@reduxjs/toolkit";
 import authReducer from "./auth/authSlice";
 import teamReducer from "./team/teamSlice";
+import notificationReducer from "./notification/notificationSlice";
+import projectReducer from "./projects/projectsSlice";
+
 import authApi from "@/api/auth.api";
 import projectsApi from "@/api/projects.api";
 import invitationsApi from "@/api/invitations.api";
@@ -14,6 +17,8 @@ import calendarApi from "@/api/calendar.api";
 const base = combineReducers({
      auth: authReducer,
      team: teamReducer,
+     notification: notificationReducer,
+     projects: projectReducer,
 });
 
 const rootReducer = combineReducers({

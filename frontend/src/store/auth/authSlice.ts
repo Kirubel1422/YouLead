@@ -1,9 +1,10 @@
 import { AuthState } from "@/types/auth.types";
+import { IUser } from "@/types/user.types";
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState: AuthState = {
      isAuthenticated: false,
-     user: null,
+     user: {} as IUser,
      hasTeam: null,
 };
 
@@ -17,7 +18,7 @@ const authSlice = createSlice({
           },
           logout: (state) => {
                state.isAuthenticated = false;
-               state.user = null;
+               state.user = {} as IUser;
                state.hasTeam = false;
                localStorage.clear();
                window.location.href = "/login";

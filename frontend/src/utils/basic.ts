@@ -1,4 +1,4 @@
-import { UserRole } from "@/types/user.types";
+import { IUser, UserRole } from "@/types/user.types";
 import { formatDistance } from "date-fns";
 
 export const take = (data: Array<any>, amount: number): Array<any> => {
@@ -137,4 +137,8 @@ export const aiResponseToHTML = (text: string) => {
      }
 
      return html;
+};
+
+export const exists = (user: any): boolean => {
+     return Object.keys(user).length > 0;
 };

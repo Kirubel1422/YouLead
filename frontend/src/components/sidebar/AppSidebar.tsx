@@ -11,19 +11,22 @@ import {
      SidebarMenuItem,
 } from "../ui/sidebar";
 import { Link, useLocation } from "react-router-dom";
-import { logout } from "@/store/auth/authSlice";
+import { logout, setUserTeamState } from "@/store/auth/authSlice";
 import { onBoardingSidebar, OnboardingSidebarItem, sidebar, SidebarItem } from "@/constants/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { IProject } from "@/types/project.types";
-import { getInitials, getRoleLabel, take } from "@/utils/basic";
+import { exists, getInitials, getRoleLabel, take } from "@/utils/basic";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 import { UserRole } from "@/types/user.types";
 import { Button } from "../ui/button";
 import { useFetchMyProjectsQuery } from "@/api/projects.api";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "../Toast";
 import { Skeleton } from "../ui/skeleton";
+import Join from "../modal/team/Join";
+import { useJoinTeamMutation } from "@/api/team.api";
+import { saveProjects } from "@/store/projects/projectsSlice";
 
 export default function AppSidebar() {
      const location = useLocation();
@@ -34,9 +37,11 @@ export default function AppSidebar() {
 
      const Prefix = (user.role as UserRole) === "teamMember" ? "My " : "";
 
-     if (!isAuthenticated) {
+     if (!isAuthenticated || !exists(user)) {
           dispatch(logout());
      }
+
+     const [joinOpen, setJoinOpen] = useState<boolean>(false);
 
      // Query my projects
      const {
@@ -47,12 +52,34 @@ export default function AppSidebar() {
           {
                page: 1,
                limit: 3,
-               teamId: user?.teamId,
+               teamId: user?.teamId || "",
           },
           {
                skip: !hasTeam,
           },
      );
+
+     // Cache projects fetched
+     useEffect(() => {
+          if (myProjects && myProjects.projects) {
+               dispatch(saveProjects(myProjects.projects));
+          }
+     }, [myProjects]);
+
+     // Join a team
+     const [join, { isLoading: joining }] = useJoinTeamMutation();
+
+     // Handle Join Team Mutation
+     const handleJoinTeamMutation = async (teamId: string) => {
+          try {
+               const resp = await join({ teamId }).unwrap();
+               showToast(resp.message, "success");
+               setJoinOpen(false);
+               dispatch(setUserTeamState({ hasTeam: true }));
+          } catch (error: any) {
+               showToast(error.data.message || "Something went wrong!", "error");
+          }
+     };
 
      useEffect(() => {
           if (error && "status" in error) {
@@ -167,7 +194,7 @@ export default function AppSidebar() {
                                    <p className="text-xs text-gray-600 mb-3">
                                         Join a team to start collaborating on projects and tasks.
                                    </p>
-                                   <Button size="sm" className="w-full">
+                                   <Button onClick={() => setJoinOpen(true)} size="sm" className="w-full">
                                         <UserPlus className="mr-2 h-4 w-4" />
                                         Join Now
                                    </Button>
@@ -197,6 +224,10 @@ export default function AppSidebar() {
                          </div>
                     </div>
                </SidebarContent>
+
+               {joinOpen && (
+                    <Join loading={joining} open={joinOpen} setOpen={setJoinOpen} onJoin={handleJoinTeamMutation} />
+               )}
           </Sidebar>
      );
 }

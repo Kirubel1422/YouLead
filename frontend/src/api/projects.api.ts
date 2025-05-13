@@ -15,6 +15,8 @@ const projectsApi = createApi({
           credentials: "include",
      }),
 
+     tagTypes: ["Projects"],
+
      endpoints: (builder) => ({
           // Fetch my projects
           fetchMyProjects: builder.query<MyProjects, Pagination & { teamId: string }>({
@@ -24,6 +26,14 @@ const projectsApi = createApi({
                }),
 
                transformResponse: (resp: IResponse) => (resp.success ? resp.data : ({} as IProject)),
+          }),
+
+          // Mark Project as complete
+          markProjectAsComplete: builder.mutation<string, string>({
+               query: (projectId) => "/complete/" + projectId,
+               transformResponse: (resp: IResponse) => (resp.success ? "Completed!" : ""),
+               invalidatesTags: (resp: string | undefined, _, projectId) =>
+                    resp ? [{ type: "Projects" as const, id: projectId }] : [],
           }),
      }),
 });

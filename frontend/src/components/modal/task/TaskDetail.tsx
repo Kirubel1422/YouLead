@@ -1,6 +1,7 @@
 import { useMarkTaskCompleteMutation, useUpdateProgressMutation } from "@/api/tasks.api";
 import { Loadable } from "@/components/state";
 import { useToast } from "@/components/Toast";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
      Dialog,
@@ -11,12 +12,13 @@ import {
      DialogTitle,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { logout } from "@/store/auth/authSlice";
 import { RootState } from "@/store/rootReducer";
 import { type ITaskDetail } from "@/types/task.types";
 import { getPriorityColor, getStatusColor, formatDate } from "@/utils/basic";
-import { Badge, CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 interface TaskDetailProps {
      open: boolean;
@@ -25,6 +27,13 @@ interface TaskDetailProps {
 }
 
 export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailProps) {
+     const dispatch = useDispatch();
+     const { user } = useSelector((state: RootState) => state.base.auth);
+     if (user == null) {
+          dispatch(logout());
+          return;
+     }
+
      if (!selectedTask) {
           return (
                <>
@@ -33,7 +42,6 @@ export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailPr
                </>
           );
      }
-     const { user } = useSelector((state: RootState) => state.base.auth);
      const { showToast } = useToast();
 
      const [progressValue, setProgressValue] = useState<number>(selectedTask.progress);
@@ -90,7 +98,7 @@ export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailPr
                               {/* Task Description */}
                               <div className="space-y-2">
                                    <h4 className="text-sm font-medium">Description</h4>
-                                   <p className="text-sm text-gray-600">{selectedTask.description}</p>
+                                   <p className="text-sm text-gray-600">{selectedTask.description ?? "N/A"}</p>
                               </div>
 
                               {/* Task Progress Slider */}
@@ -136,10 +144,7 @@ export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailPr
                                    <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                                         Close
                                    </Button>
-                                   {
-                                    user.role
-                                   }
-                                   <Button variant="outline" size="sm">
+                                   <Button hidden={user.role === "teamMember"} variant="outline" size="sm">
                                         Edit Task
                                    </Button>
                               </div>

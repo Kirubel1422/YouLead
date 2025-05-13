@@ -1,5 +1,9 @@
 type ProjectStatusTypes = "pending" | "pastDue" | "completed";
 
+export interface ProjectState {
+     projects: IProject[];
+}
+
 export interface ProjectStatus {
      completed: number;
      pending: number;
@@ -9,7 +13,7 @@ export interface ProjectStatus {
 }
 
 export interface IProject {
-     id?: string;
+     id: string;
      createdBy: string;
      name: string;
      description?: string;
@@ -17,6 +21,15 @@ export interface IProject {
      teamId: string;
      deadline?: string[];
      status: ProjectStatusTypes;
+     createdAt: string;
+     updatedAt: string;
+     details: ProjectStatus;
+}
+
+export interface ProjectStatus {
+     completed: number;
+     pending: number;
+     pastDue: number;
      createdAt: string;
      updatedAt: string;
 }

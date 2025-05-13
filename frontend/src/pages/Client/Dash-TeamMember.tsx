@@ -18,10 +18,9 @@ import { ITaskDetail, TaskFilter } from "@/types/task.types";
 import { useGetMainQuery } from "@/api/analytics.api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 import { Empty } from "@/components/placeholder/empty";
-import { logout } from "@/store/auth/authSlice";
 import { useUpcomingMeetingsQuery } from "@/api/meeting.api";
 import { IMeeting } from "@/types/meeting.type";
 import { differenceInHours, differenceInMinutes } from "date-fns";
@@ -32,16 +31,11 @@ import TaskDetail from "@/components/modal/task/TaskDetail";
 
 export default function TeamMemberDashboard() {
      const { user } = useSelector((state: RootState) => state.base.auth);
-     const dispatch = useDispatch();
 
      const [taskFilter, setTaskFilter] = useState<TaskFilter>(undefined);
      const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
      const [taskDetailOpen, setTaskDetailOpen] = useState<boolean>(false);
      const [targetTask, setTargetTask] = useState<ITaskDetail | undefined>();
-
-     if (user === null) {
-          dispatch(logout());
-     }
 
      // Fetch my tasks
      const { data, isFetching: fetchingTasks } = useMyTasksQuery(taskFilter, {
