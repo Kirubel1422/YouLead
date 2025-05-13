@@ -15,7 +15,7 @@ const activityApi = createApi({
      tagTypes: ["Activities"],
 
      endpoints: (builder) => ({
-          recentActivitites: builder.query<IActivity[], string>({
+          recentActivitites: builder.query<IActivity[], string | void>({
                query: (teamId) => `/recent?teamId=${teamId}`,
 
                transformResponse: (resp: IResponse) => (resp.success ? resp.data : []),
