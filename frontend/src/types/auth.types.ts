@@ -2,7 +2,7 @@ import { type IUser } from "./user.types";
 
 export type AuthState = {
      isAuthenticated: boolean;
-     user: IUser | null;
+     user: IUser;
      hasTeam: boolean | null;
 };
 
