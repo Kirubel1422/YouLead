@@ -26,4 +26,11 @@ router.put(
   authMiddlewares.validateAdmin,
   teamController.removeMemberFromTeam
 );
+
+// Get all members of a team
+router.get(
+  "/members/:teamId",
+  authMiddlewares.validate,
+  teamController.getAllMembers
+);
 export default router;

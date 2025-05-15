@@ -17,3 +17,26 @@ export interface IMessage {
   createdAt?: string;
   updatedAt?: string;
 }
+
+type OnlineStatus = "online" | "offline";
+type ChatType = "dm" | "project" | "task";
+
+export interface IChatUser {
+  id: string;
+  name: string;
+  avatar?: string;
+  initials: string;
+  status: OnlineStatus;
+  lastSeen?: string;
+  role?: string;
+}
+
+export interface IChat {
+  id: string;
+  type: ChatType;
+  name: string;
+  participants: IChatUser[];
+  lastMessage?: Partial<IMessage>;
+  // unreadCount: number;
+  icon?: string;
+}

@@ -6,6 +6,8 @@ import { ApiError } from "src/utils/api/api.response";
 import logger from "src/utils/logger/logger";
 
 let io: SocketServer;
+export const activeUsers = new Map<string, string>();
+
 const initializeSocket = (server: Server) => {
   // Create Instance
   const messageService = new MessageService();
@@ -19,6 +21,18 @@ const initializeSocket = (server: Server) => {
 
   io.on("connection", async (socket: Socket) => {
     console.log("New socket connection: ", socket.id);
+
+    // On online
+    socket.on("online", (userId: string) => {
+      activeUsers.set(userId, socket.id);
+      console.log("Online users: ", activeUsers);
+    });
+
+    // On offline
+    socket.on("offline", (userId: string) => {
+      activeUsers.delete(userId);
+      console.log(userId, " went offline");
+    });
 
     // Join Project Room
     socket.on("joinProjectRoom", (projectId) => {
@@ -38,15 +52,24 @@ const initializeSocket = (server: Server) => {
       socket.join(partnerId);
     });
 
+    // Setup to receive messages
+    socket.on("setup", (userId: string) => {
+      logger.debug("User made itself available for upcoming socket events");
+      socket.join(userId);
+    });
+
     // On sending messages
     socket.on("send", (msgData: IMessage) => {
-      const { sentIn, receivedBy } = msgData;
+      const { sentIn, receivedBy, sentBy } = msgData;
 
       console.log(`Sent Message (${sentIn}): `, msgData);
 
+      logger.debug("Sender ID: " + sentBy);
+      logger.debug("Receiver ID: " + receivedBy);
+
       // Send message
       io.to(receivedBy as string).emit("receive", msgData);
-
+      return;
       // Save Message
       messageService
         .saveMessage(msgData)

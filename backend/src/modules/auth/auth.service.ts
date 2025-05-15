@@ -7,12 +7,17 @@ import { ISignin, ISignupRequest } from "src/interfaces/auth.interface";
 import { IUser } from "src/interfaces/user.interface";
 import { ApiError } from "src/utils/api/api.response";
 import { ActivityService } from "../activities/activities.service";
+import { IChatUser } from "src/interfaces/message.interface";
+import { Helper } from "src/utils/helpers";
+import { activeUsers } from "src/services/socket";
 
 export class AuthServices {
   private activityService: ActivityService;
+  private static helper: Helper;
 
   constructor() {
     this.activityService = new ActivityService();
+    AuthServices.helper = new Helper();
 
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
@@ -224,6 +229,27 @@ export class AuthServices {
     }
 
     return { ...userData };
+  }
+
+  // Get some information to display on chat list
+  static async chatUserInfo(userId: string): Promise<IChatUser> {
+    const userData = await this.getUserById(userId);
+
+    const initials = AuthServices.helper.getInitials(
+      userData.profile.firstName,
+      userData.profile.lastName
+    );
+
+    return {
+      id: userId,
+      initials,
+      name: userData.profile.firstName + " " + userData.profile.lastName,
+      status: activeUsers.get(userId) ? "online" : "offline",
+      avatar:
+        userData.profile.profilePicture ||
+        "/placeholder.svg?height=40&width=40",
+      role: userData.role,
+    };
   }
 
   // GET: User Detail by Email

@@ -7,9 +7,12 @@ import logger from "src/utils/logger/logger";
 import { CreateTeamSchemaType } from "src/validators/team.validator";
 import { AuthServices } from "../auth/auth.service";
 import { ActivityService } from "../activities/activities.service";
+import { Helper } from "src/utils/helpers";
+import { activeUsers } from "src/services/socket";
 
 export class TeamService {
   private activityService: ActivityService;
+  private helpers: Helper;
 
   constructor() {
     this.createTeam = this.createTeam.bind(this);
@@ -17,7 +20,9 @@ export class TeamService {
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
     this.removeMember = this.removeMember.bind(this);
+    this.getAllMembers = this.getAllMembers.bind(this);
 
+    this.helpers = new Helper();
     this.activityService = new ActivityService();
   }
 
@@ -234,5 +239,47 @@ export class TeamService {
       teamId,
       type: "remove-member",
     });
+  }
+
+  // Get all members of a team
+  /**
+   * 
+   * @param teamId   {
+          id: "user1",
+          name: "Alice Johnson",
+          avatar: "/placeholder.svg?height=40&width=40",
+          initials: "AJ",
+          status: "online",
+          role: "UI Designer",
+     },
+   */
+  async getAllMembers(teamId: string, uid: string): Promise<any[]> {
+    console.log(activeUsers);
+    const membersSnap = await db
+      .collection(COLLECTIONS.USERS)
+      .where("teamId", "==", teamId)
+      .get();
+
+    const members = membersSnap.docs.map((doc) => {
+      const userData = doc.data() as IUser;
+      return {
+        id: userData.uid,
+        name: userData.profile.firstName + " " + userData.profile.lastName,
+        avatar:
+          userData.profile.profilePicture ||
+          "/placeholder.svg?height=40&width=40",
+        initials: this.helpers.getInitials(
+          userData.profile.firstName,
+          userData.profile.lastName
+        ),
+        status:
+          uid == userData.uid || activeUsers.get(userData.uid)
+            ? "online"
+            : "offline",
+        role: userData.role,
+      };
+    });
+
+    return members;
   }
 }

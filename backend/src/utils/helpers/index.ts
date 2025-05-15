@@ -6,6 +6,7 @@ export class Helper {
     this.extractFullName = this.extractFullName.bind(this);
     this.fillTimeStamp = this.fillTimeStamp.bind(this);
     this.formatStandardDate = this.formatStandardDate.bind(this);
+    this.getInitials = this.getInitials.bind(this);
   }
 
   extractFullName(profile: IProfile) {
@@ -23,5 +24,11 @@ export class Helper {
 
   formatStandardDate(dateString: string) {
     return dayjs(dateString).format("YYYY-MM-DD");
+  }
+
+  getInitials(firstName: string, lastName?: string) {
+    const firstInitial = firstName.charAt(0);
+    const lastInitial = lastName ? lastName.charAt(0) : "";
+    return `${firstInitial}${lastInitial}`.toUpperCase();
   }
 }

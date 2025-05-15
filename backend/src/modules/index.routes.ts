@@ -9,6 +9,7 @@ import meetingRouter from "./meeting/meeting.router";
 import attendanceRouter from "./attendance/attendance.router";
 import activityRoutes from "./activities/activities.router";
 import calendarRoutes from "./calendar/calendar.router";
+import chatRoutes from "./messages/message.router";
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use("/meeting", meetingRouter);
 router.use("/attendance", attendanceRouter);
 router.use("/activities", activityRoutes);
 router.use("/calendar", calendarRoutes);
+router.use("/chat", chatRoutes);
 
 export default router;

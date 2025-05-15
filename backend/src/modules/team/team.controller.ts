@@ -12,6 +12,7 @@ export class TeamController {
     this.leaveTeam = this.leaveTeam.bind(this);
     this.joinTeamById = this.joinTeamById.bind(this);
     this.removeMemberFromTeam = this.removeMemberFromTeam.bind(this);
+    this.getAllMembers = this.getAllMembers.bind(this);
   }
 
   async createTeam(req: Request, res: Response, next: NextFunction) {
@@ -73,6 +74,20 @@ export class TeamController {
     try {
       const { memberId } = req.query;
       await this.teamService.removeMember(memberId as string, req.user.uid);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Get all members of a team
+  async getAllMembers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { teamId } = req.params;
+      const members = await this.teamService.getAllMembers(
+        teamId,
+        req.user.uid
+      );
+      res.json(new ApiResp("Fetched all members", 200, true, members));
     } catch (error) {
       next(error);
     }
