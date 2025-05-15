@@ -3,6 +3,13 @@ import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
 import { IMessage, ReadMessageType } from "src/interfaces/message.interface";
 import { ApiError } from "src/utils/api/api.response";
+import { AuthServices } from "../auth/auth.service";
+import dayjs from "dayjs";
+import isYesterday from "dayjs/plugin/isYesterday";
+import isToday from "dayjs/plugin/isToday";
+
+dayjs.extend(isYesterday);
+dayjs.extend(isToday);
 
 export class MessageService {
   construct() {
@@ -10,6 +17,7 @@ export class MessageService {
     this.deleteMessage = this.deleteMessage.bind(this);
     this.editMessage = this.editMessage.bind(this);
     this.readMessage = this.readMessage.bind(this);
+    this.fetchDM = this.fetchDM.bind(this);
   }
 
   // Save message
@@ -83,5 +91,72 @@ export class MessageService {
         readBy: firestore.FieldValue.arrayUnion(readerData),
       });
     });
+  }
+
+  // Fetch user messages
+  async fetchDM(userId: string): Promise<any[]> {
+    const sentFromMeQ = db
+      .collection(COLLECTIONS.MESSAGES)
+      .where("sentBy", "==", userId)
+      .where("sentIn", "==", "dm")
+      .orderBy("createdAt");
+    const receievedByMeQ = db
+      .collection(COLLECTIONS.MEETINGS)
+      .where("receivedBy", "==", userId)
+      .where("sentIn", "==", "dm")
+      .orderBy("createdAt");
+
+    const [sentFromMe, receievedByMe] = await Promise.all([
+      sentFromMeQ.get(),
+      receievedByMeQ.get(),
+    ]);
+
+    const combinedMsgs = [
+      ...sentFromMe.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      ...receievedByMe.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    ] as IMessage[];
+
+    // Parse user ids
+    const userIds = new Set(
+      combinedMsgs.map((doc) => {
+        const isSentFromMe = doc.sentBy == userId;
+        return isSentFromMe ? doc.receivedBy : doc.sentBy;
+      })
+    );
+
+    // Unique user ids
+    const uniqueUserIds = [...userIds];
+
+    const chats = uniqueUserIds.map((uuid: string) => {
+      return AuthServices.chatUserInfo(uuid).then((res) => {
+        const msgs = combinedMsgs.filter(
+          (msg) => msg.receivedBy == uuid || msg.sentBy == uuid
+        );
+
+        const lastMsgData = msgs[msgs.length - 1];
+        const lastMsg = {
+          id: lastMsgData.id,
+          sentBy: lastMsgData.sentBy,
+          msgContent: lastMsgData.msgContent,
+          createdAt: dayjs(lastMsgData.createdAt).isToday()
+            ? dayjs(lastMsgData.createdAt).format("hh:mm A")
+            : dayjs(lastMsgData.createdAt).isYesterday()
+            ? "Yesterday"
+            : dayjs(lastMsgData.createdAt).format("ll"),
+        };
+
+        return {
+          userId: uuid,
+          userData: res,
+          msgs,
+          msgsCount: msgs.length,
+          lastMsg,
+          type: "dm",
+        };
+      });
+    });
+
+    const [result] = await Promise.all([await Promise.all(chats)]);
+    return result;
   }
 }
