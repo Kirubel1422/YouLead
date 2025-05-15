@@ -1,331 +1,623 @@
-import { useState } from "react";
-import Layout from "@/components/sidebar/layout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Send, Phone, Video, MoreVertical, Menu, Cat, Construction } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { chatBg } from "@/assets";
-import { Badge } from "@/components/ui/badge";
-import { mockContacts, mockMessages } from "@/constants/mock/Messages/contact";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Send, MessageSquare, Paperclip, MoreHorizontal, ClipboardList, Briefcase } from "lucide-react";
+import {
+     DropdownMenu,
+     DropdownMenuContent,
+     DropdownMenuItem,
+     DropdownMenuSeparator,
+     DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Layout from "@/components/sidebar/layout";
+import { useGetTeamMembersQuery } from "@/api/team.api";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
-import { IProject } from "@/types/project.types";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ITeamMember } from "@/types/team.types";
+import { exists, getInitials } from "@/utils/basic";
+import { Skeleton } from "@/components/ui/skeleton";
+import { socket } from "@/services/socket";
+import { useFetchDMMessagesQuery } from "@/api/messages.api";
+import { IChat, IMessage, OnlineStatus } from "@/types/messages.types";
+import { notificationSound } from "@/assets";
 
-interface Message {
-     id: string;
-     content: string;
-     sender: {
-          id: string;
-          name: string;
-          avatar?: string;
-     };
-     timestamp: string;
-     isMe: boolean;
-}
+export const ChatInterface = () => {
+     const { user } = useSelector((state: RootState) => state.base.auth);
+     const [activeTab, setActiveTab] = useState<"dm" | "projects" | "tasks">("dm");
 
-interface Contact {
-     id: string;
-     name: string;
-     avatar?: string;
-     lastMessage?: string;
-     lastMessageTime?: string;
-     unreadCount?: number;
-     isOnline: boolean;
-}
+     const [selectedChat, setSelectedChat] = useState<IChat | null>();
+     const [messages, setMessages] = useState<IMessage[]>([] as IMessage[]);
 
-type Category = "DM" | "Projects" | "Tasks";
-
-export default function Messages() {
-     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-     const [messageInput, setMessageInput] = useState("");
+     const [newMessage, setNewMessage] = useState("");
      const [searchQuery, setSearchQuery] = useState("");
-     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-     // Selected Project
-     const [activeProj, setActiveProj] = useState<string>("");
+     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-     // Cached projects
-     const { projects } = useSelector((state: RootState) => state.base.projects);
+     // Fetch DM list
+     const { data: dmData, isSuccess: fetchDmSuccess } = useFetchDMMessagesQuery(undefined);
+     const [dmMessages, setDmMessages] = useState<IChat[]>([] as IChat[]);
 
-     // For Category Selection
-     const [activeTab, setActiveTab] = useState<Category>("DM");
+     // Use useRef to keep the latest value of dmMessages
+     const dmMessagesRef = useRef<IChat[]>([]);
 
-     const filteredContacts = mockContacts.filter((contact) =>
-          contact.name.toLowerCase().includes(searchQuery.toLowerCase()),
-     );
+     useEffect(() => {
+          dmMessagesRef.current = [...dmMessages];
+     }, [dmMessages]);
+
+     // Save fetched messages to local state
+     useEffect(() => {
+          if (fetchDmSuccess) {
+               setDmMessages(dmData);
+          }
+     }, []);
+
+     // Filtered DM list
+     const filteredDms = Array.isArray(dmMessages)
+          ? dmMessages.filter((dm) => {
+                 return dm.msgs.some((msg) => msg.msgContent.includes(searchQuery));
+            })
+          : [];
+
+     // User make itself accessible for upcoming socket events
+     useEffect(() => {
+          // When online
+          const handleActive = () => {
+               socket.emit("online", user.uid);
+          };
+
+          handleActive();
+
+          // Setup socket
+          socket.emit("setup", user.uid);
+     }, []);
+
+     useEffect(() => {
+          const handleReceive = (msgData: IMessage) => {
+               const senderId = msgData.sentBy;
+               console.log("New Message from: ", senderId);
+
+               const dmMessagesCpy = [...dmMessagesRef.current];
+
+               setDmMessages((prev) => {
+                    const chatIndex = prev.findIndex((chat) => chat.userId === senderId);
+
+                    if (chatIndex !== -1) {
+                         // Chat exists, update it immutably
+                         const updatedDmMessages = [...prev]; // Create a copy
+                         updatedDmMessages[chatIndex] = {
+                              ...updatedDmMessages[chatIndex],
+                              msgs: [...updatedDmMessages[chatIndex].msgs, msgData],
+                         };
+                         return updatedDmMessages;
+                    } else {
+                         // Chat doesn't exist, create a new chat entry
+                         return [
+                              ...prev,
+                              {
+                                   userId: senderId,
+                                   msgs: [msgData],
+                                   lastMsg: msgData,
+                                   msgCount: 1,
+                                   type: "dm",
+                                   userData: {},
+                              },
+                         ] as IChat[];
+                    }
+               });
+          };
+
+          socket.on("receive", handleReceive);
+
+          return () => {
+               socket.off("receive", handleReceive); // cleanup
+          };
+     }, []);
+
+     // Fetch Members
+     const { data: members, isFetching: fetchingMembers } = useGetTeamMembersQuery(user.teamId || "", {
+          refetchOnFocus: true,
+          pollingInterval: 60000,
+     });
+
+     // Filter chats based on search query and active tab
+     // const filteredChats = [].filter((chat: IChat) => {
+     //      const matchesSearch = chat.name.toLowerCase().includes(searchQuery.toLowerCase());
+     //      if (activeTab === "dm") return chat.type === "dm" && matchesSearch;
+     //      if (activeTab === "projects") return chat.type === "project" && matchesSearch;
+     //      if (activeTab === "tasks") return chat.type === "task" && matchesSearch;
+     //      return matchesSearch;
+     // });
+     const filteredChats = [];
+
+     // Scroll to bottom of messages
+     useEffect(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+     }, [messages]);
+
+     // Load messages when selected chat changes
+     useEffect(() => {
+          if (selectedChat && selectedChat.userId) {
+               setMessages(selectedChat.msgs as IMessage[]);
+          }
+     }, [selectedChat]);
 
      const handleSendMessage = () => {
-          if (messageInput.trim()) {
-               // Add logic to send message
-               setMessageInput("");
+          if (!newMessage.trim() || !selectedChat) return;
+          const newMsg: IMessage = {
+               sentBy: user.uid,
+               msgContent: newMessage,
+               createdAt: new Date().toISOString(),
+               updatedAt: new Date().toISOString(),
+               receivedBy: selectedChat.userId,
+               sentIn: "dm",
+          };
+
+          socket.emit("send", newMsg);
+
+          setMessages((prev) => [...prev, newMsg]);
+          setNewMessage("");
+     };
+
+     const handleKeyDown = (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+               e.preventDefault();
+               handleSendMessage();
           }
      };
 
-     const ContactsList = () => (
-          <div className="space-y-2 p-4">
-               {filteredContacts.map((contact) => (
-                    <div
-                         key={contact.id}
-                         className={cn(
-                              "flex items-center space-x-4 p-3 rounded-lg cursor-pointer transition-colors",
-                              "hover:bg-slate-100 dark:hover:bg-slate-800",
-                              selectedContact?.id === contact.id && "bg-slate-100 dark:bg-slate-800",
-                         )}
-                         onClick={() => {
-                              setSelectedContact(contact);
-                              setIsMobileMenuOpen(false);
-                         }}
-                    >
-                         <div className="relative">
-                              <Avatar className="border-2 border-slate-200 dark:border-slate-700">
-                                   <AvatarImage src={contact.avatar} />
-                                   <AvatarFallback className="bg-slate-300 dark:bg-slate-600">
-                                        {contact.name.slice(0, 2)}
-                                   </AvatarFallback>
-                              </Avatar>
-                              {contact.isOnline && (
-                                   <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-                              )}
-                         </div>
-                         <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start">
-                                   <h4 className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">
-                                        {contact.name}
-                                   </h4>
-                                   {contact.lastMessageTime && (
-                                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                                             {contact.lastMessageTime}
-                                        </span>
-                                   )}
-                              </div>
-                              {contact.lastMessage && (
-                                   <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                                        {contact.lastMessage}
-                                   </p>
-                              )}
-                         </div>
-                         {contact.unreadCount && contact.unreadCount > 0 && (
-                              <Badge
-                                   variant="outline"
-                                   className="bg-slate-600 dark:bg-slate-800 text-slate-50 dark:text-slate-400"
-                              >
-                                   {contact.unreadCount}
-                              </Badge>
-                         )}
+     const getStatusColor = (status: OnlineStatus) => {
+          switch (status) {
+               case "online":
+                    return "bg-green-500";
+               case "offline":
+                    return "bg-gray-500";
+               default:
+                    return "bg-gray-500";
+          }
+     };
+
+     const getChatIcon = (chat: IChat) => {
+          if (chat.type === "dm") {
+               const participant = chat.userData;
+               return (
+                    <Avatar className="h-9 w-9">
+                         <AvatarImage src={participant.avatar || "/placeholder.svg"} alt={participant.name} />
+                         <AvatarFallback>{participant.initials}</AvatarFallback>
+                    </Avatar>
+               );
+          } else if (chat.type === "project") {
+               return (
+                    <div className="h-9 w-9 bg-purple-100 rounded-md flex items-center justify-center text-purple-600">
+                         <Briefcase className="h-5 w-5" />
                     </div>
-               ))}
-          </div>
-     );
+               );
+          } else if (chat.type === "task") {
+               return (
+                    <div className="h-9 w-9 bg-blue-100 rounded-md flex items-center justify-center text-blue-600">
+                         <ClipboardList className="h-5 w-5" />
+                    </div>
+               );
+          }
+     };
+
+     const getUserById = (id: string): ITeamMember | undefined => {
+          if (!Array.isArray(members)) return;
+
+          if (id === "currentUser") {
+               return {
+                    id: user.uid,
+                    avatar: user.profile.profilePicture || "/placeholder.svg",
+                    initials: getInitials(user.profile.firstName, user.profile.lastName),
+                    name: user.profile.firstName + " " + user.profile.lastName,
+                    role: user.role,
+                    status: "online",
+                    teamId: user.teamId as string,
+               };
+          }
+          return members.find((user) => user.id === id);
+     };
 
      return (
           <Layout>
-               <main className="flex gap-4 h-full w-full bg-slate-50 dark:bg-slate-900">
-                    {/* Mobile Menu Button */}
-                    <div className="lg:hidden absolute top-4 left-4 z-20">
-                         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                              <SheetTrigger asChild>
-                                   <Button variant="outline" size="icon" className="bg-white dark:bg-slate-800">
-                                        <Menu className="h-4 w-4" />
-                                   </Button>
-                              </SheetTrigger>
-                              <SheetContent side="left" className="w-80 p-0">
-                                   <div className="h-full flex flex-col bg-white dark:bg-slate-900">
-                                        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-                                             <div className="relative">
-                                                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
-                                                  <Input
-                                                       placeholder="Search messages..."
-                                                       className="pl-8 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                                                       value={searchQuery}
-                                                       onChange={(e) => setSearchQuery(e.target.value)}
-                                                  />
-                                             </div>
-                                        </div>
-                                        <ScrollArea className="flex-1">
-                                             <ContactsList />
-                                        </ScrollArea>
-                                   </div>
-                              </SheetContent>
-                         </Sheet>
-                    </div>
-
-                    {/* Desktop Sidebar */}
-                    <Card className="hidden lg:block border-0 border-r border-slate-200 dark:border-slate-800 h-[calc(100vh-4rem)] bg-white dark:bg-slate-900">
-                         <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+               <div className="flex h-[calc(100vh-8rem)] bg-gray-50">
+                    {/* Chat List Sidebar */}
+                    <div className="w-80 border-r bg-white flex flex-col">
+                         <div className="p-4 border-b">
                               <div className="relative">
-                                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
+                                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
                                    <Input
                                         placeholder="Search messages..."
-                                        className="pl-8 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                                        className="pl-8"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                    />
                               </div>
                          </div>
-                         <ScrollArea className="h-[calc(100vh-8rem)]">
-                              <ContactsList />
-                         </ScrollArea>
-                    </Card>
 
-                    {/* Chat Area */}
-                    {/* Category Section  */}
-                    <div className="flex-1 flex flex-col  dark:bg-slate-900">
-                         <CategorySelection setActiveTab={setActiveTab} />
+                         <Tabs
+                              value={activeTab}
+                              onValueChange={(value) => setActiveTab(value as any)}
+                              className="flex-1 flex flex-col"
+                         >
+                              <TabsList className="grid grid-cols-3 mx-4 mt-2">
+                                   <TabsTrigger value="dm">DMs</TabsTrigger>
+                                   <TabsTrigger value="projects">Projects</TabsTrigger>
+                                   <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                              </TabsList>
 
-                         {activeTab === "Projects" && (
-                              <div className="flex items-center bg-white border-b py-2 pl-4 pr-2 dark:bg-slate-900 dark:border-slate-800">
-                                   {projects.length > 0 && (
-                                        <ToggleGroup
-                                             onValueChange={(value) => setActiveProj(value)}
-                                             defaultValue={projects[0].name}
-                                             type="single"
-                                        >
-                                             {projects.map((project: IProject) => (
-                                                  <ToggleGroupItem
-                                                       key={project.name}
-                                                       value={project.name}
-                                                       aria-label="Toggle italic"
-                                                  >
-                                                       {project.name}
-                                                  </ToggleGroupItem>
-                                             ))}
-                                        </ToggleGroup>
-                                   )}
-                              </div>
-                         )}
-
-                         <div className=" h-[calc(100vh-20rem)]">
-                              {activeTab === "Projects" && projects.length > 0 && (
-                                   <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
-                                        <div className="flex items-center space-x-4">
-                                             <Construction className="text-gray-600" />
-                                             <h3 className="font-medium text-slate-900 dark:text-slate-100">
-                                                  {activeProj}
-                                             </h3>
-                                        </div>
-                                   </div>
-                              )}
-
-                              {selectedContact ? (
-                                   <>
-                                        <div
-                                             hidden={activeTab == "Projects"}
-                                             className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900"
-                                        >
-                                             <div className="flex items-center space-x-4">
-                                                  <Avatar className="border-2 border-slate-200 dark:border-slate-700">
-                                                       <AvatarImage src={selectedContact.avatar} />
-                                                       <AvatarFallback className="bg-slate-300 dark:bg-slate-600">
-                                                            {selectedContact.name.slice(0, 2)}
-                                                       </AvatarFallback>
-                                                  </Avatar>
-                                                  <div>
-                                                       <h3 className="font-medium text-slate-900 dark:text-slate-100">
-                                                            {selectedContact.name}
-                                                       </h3>
-                                                       {selectedContact.isOnline && (
-                                                            <span className="text-sm text-green-500">Online</span>
+                              <div className="flex-1 overflow-y-auto p-2">
+                                   <TabsContent value="dm" className="m-0 space-y-1">
+                                        {filteredDms.map((chat) => (
+                                             <div
+                                                  key={chat.userId}
+                                                  className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                                                       selectedChat?.userId === chat.userId ? "bg-gray-100" : ""
+                                                  }`}
+                                                  onClick={() => {
+                                                       setSelectedChat(chat);
+                                                  }}
+                                             >
+                                                  <div className="relative">
+                                                       <Avatar className="h-9 w-9">
+                                                            <AvatarImage
+                                                                 src={chat.userData.avatar || "/placeholder.svg"}
+                                                                 alt={chat.userData.name}
+                                                            />
+                                                            <AvatarFallback>{chat.userData.initials}</AvatarFallback>
+                                                       </Avatar>
+                                                       <span
+                                                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(
+                                                                 chat.userData.status,
+                                                            )}`}
+                                                       ></span>
+                                                  </div>
+                                                  <div className="ml-3 flex-1 min-w-0">
+                                                       <div className="flex justify-between items-center">
+                                                            <p className="font-medium text-sm truncate">
+                                                                 {chat.userData.name}
+                                                            </p>
+                                                            {chat.lastMsg && (
+                                                                 <span className="text-xs text-gray-500">
+                                                                      {chat.lastMsg.createdAt}
+                                                                 </span>
+                                                            )}
+                                                       </div>
+                                                       {chat.lastMsg && (
+                                                            <p className="text-xs text-gray-500 truncate">
+                                                                 {chat.lastMsg.msgContent}
+                                                            </p>
                                                        )}
                                                   </div>
+                                                  {/* {chat.unreadCount > 0 && (
+                                                       <Badge className="ml-2 bg-primary">{chat.unreadCount}</Badge>
+                                                  )} */}
                                              </div>
-                                        </div>
+                                        ))}
+                                   </TabsContent>
 
-                                        <div
-                                             className=" bg-cover bg-center h-full"
-                                             style={{
-                                                  backgroundImage: `url(${chatBg})`,
-                                             }}
-                                        >
-                                             <ScrollArea className={`flex-1 p-4 backdrop-blur-xs h-full`}>
-                                                  <div className="space-y-4">
-                                                       {/* Use Fetched Messages Here !  */}
-                                                       {mockMessages.map((message) => (
-                                                            <div
-                                                                 key={message.id}
-                                                                 className={cn(
-                                                                      "flex",
-                                                                      message.isMe ? "justify-end" : "justify-start",
-                                                                 )}
-                                                            >
-                                                                 <div
-                                                                      className={cn(
-                                                                           "max-w-[70%] rounded-lg p-3",
-                                                                           message.isMe
-                                                                                ? "bg-slate-600 text-white dark:bg-slate-700"
-                                                                                : "bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm",
-                                                                      )}
-                                                                 >
-                                                                      <p className="text-sm">{message.content}</p>
-                                                                      <span className="text-xs opacity-70 mt-1 block">
-                                                                           {message.timestamp}
-                                                                      </span>
-                                                                 </div>
-                                                            </div>
-                                                       ))}
+                                   {/* <TabsContent value="projects" className="m-0 space-y-1">
+                                        {filteredChats.map((chat) => (
+                                             <div
+                                                  key={chat.id}
+                                                  className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                                                       selectedChat?.id === chat.id ? "bg-gray-100" : ""
+                                                  }`}
+                                                  onClick={() => setSelectedChat(chat)}
+                                             >
+                                                  {getChatIcon(chat)}
+                                                  <div className="ml-3 flex-1 min-w-0">
+                                                       <div className="flex justify-between items-center">
+                                                            <p className="font-medium text-sm truncate">{chat.name}</p>
+                                                            {chat.lastMsg && (
+                                                                 <span className="text-xs text-gray-500">
+                                                                      {chat.lastMsg.createdAt}
+                                                                 </span>
+                                                            )}
+                                                       </div>
+                                                       {chat.lastMsg && (
+                                                            <p className="text-xs text-gray-500 truncate">
+                                                                 <span className="font-medium">
+                                                                      {
+                                                                           getUserById(
+                                                                                chat.lastMsg.sentBy as string,
+                                                                           )?.name.split(" ")[0]
+                                                                      }
+                                                                      :
+                                                                 </span>{" "}
+                                                                 {chat.lastMsg.msgContent}
+                                                            </p>
+                                                       )}
                                                   </div>
-                                             </ScrollArea>
-                                        </div>
-
-                                        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                                             <div className="flex items-center space-x-2">
-                                                  <Input
-                                                       placeholder="Type a message..."
-                                                       className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                                                       value={messageInput}
-                                                       onChange={(e) => setMessageInput(e.target.value)}
-                                                       onKeyPress={(e) => {
-                                                            if (e.key === "Enter") {
-                                                                 handleSendMessage();
-                                                            }
-                                                       }}
-                                                  />
-                                                  <Button
-                                                       onClick={handleSendMessage}
-                                                       className="bg-slate-600 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600"
-                                                  >
-                                                       <Send className="h-4 w-4" />
-                                                  </Button>
+                                                  {chat.unreadCount > 0 && (
+                                                       <Badge className="ml-2 bg-primary">{chat.unreadCount}</Badge>
+                                                  )}
                                              </div>
+                                        ))}
+                                   </TabsContent>
+
+                                   <TabsContent value="tasks" className="m-0 space-y-1">
+                                        {filteredChats.map((chat) => (
+                                             <div
+                                                  key={chat.id}
+                                                  className={`flex items-center p-2 rounded-md cursor-pointer hover:bg-gray-100 ${
+                                                       selectedChat?.id === chat.id ? "bg-gray-100" : ""
+                                                  }`}
+                                                  onClick={() => setSelectedChat(chat)}
+                                             >
+                                                  {getChatIcon(chat)}
+                                                  <div className="ml-3 flex-1 min-w-0">
+                                                       <div className="flex justify-between items-center">
+                                                            <p className="font-medium text-sm truncate">{chat.name}</p>
+                                                            {chat.lastMsg && (
+                                                                 <span className="text-xs text-gray-500">
+                                                                      {chat.lastMsg.createdAt}
+                                                                 </span>
+                                                            )}
+                                                       </div>
+                                                       {chat.lastMsg && (
+                                                            <p className="text-xs text-gray-500 truncate">
+                                                                 <span className="font-medium">
+                                                                      {
+                                                                           getUserById(
+                                                                                chat.lastMsg.sentBy as string,
+                                                                           )?.name.split(" ")[0]
+                                                                      }
+                                                                      :
+                                                                 </span>{" "}
+                                                                 {chat.lastMsg.msgContent}
+                                                            </p>
+                                                       )}
+                                                  </div>
+                                                  {chat.unreadCount > 0 && (
+                                                       <Badge className="ml-2 bg-primary">{chat.unreadCount}</Badge>
+                                                  )}
+                                             </div>
+                                        ))}
+                                   </TabsContent> */}
+                              </div>
+                         </Tabs>
+                    </div>
+
+                    {/* Chat Area */}
+                    {selectedChat ? (
+                         <div className="flex-1 flex flex-col">
+                              {/* Chat Header */}
+                              <div className="p-4 border-b bg-white flex items-center justify-between">
+                                   <div className="flex items-center">
+                                        {getChatIcon(selectedChat)}
+                                        <div className="ml-3">
+                                             <div className="flex items-center">
+                                                  <h2 className="font-medium">{selectedChat.userData.name}</h2>
+                                                  {selectedChat.type === "dm" && (
+                                                       <span
+                                                            className={`ml-2 h-2.5 w-2.5 rounded-full ${getStatusColor(
+                                                                 selectedChat.userData.status,
+                                                            )}`}
+                                                       ></span>
+                                                  )}
+                                             </div>
+                                             <p className="text-xs text-gray-500">
+                                                  {selectedChat.type === "dm"
+                                                       ? selectedChat.userData.status === "online"
+                                                            ? "Online"
+                                                            : `Offline`
+                                                       : selectedChat.type === "project"
+                                                       ? `${
+                                                              Array.isArray(selectedChat.participants)
+                                                                   ? selectedChat.participants.length
+                                                                   : "No"
+                                                         } members`
+                                                       : `${
+                                                              Array.isArray(selectedChat.participants)
+                                                                   ? selectedChat.participants.length
+                                                                   : "No"
+                                                         } assignees`}
+                                             </p>
                                         </div>
-                                   </>
-                              ) : (
-                                   <div className="flex-1 h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-                                        <p className="text-slate-500 dark:text-slate-400">
-                                             Select a conversation to start messaging
-                                        </p>
                                    </div>
-                              )}
+                                   <div className="flex items-center">
+                                        <DropdownMenu>
+                                             <DropdownMenuTrigger asChild>
+                                                  <Button variant="ghost" size="icon">
+                                                       <MoreHorizontal className="h-5 w-5" />
+                                                  </Button>
+                                             </DropdownMenuTrigger>
+                                             <DropdownMenuContent align="end">
+                                                  {selectedChat.type === "dm" ? (
+                                                       <>
+                                                            <DropdownMenuItem>View Profile</DropdownMenuItem>
+                                                            <DropdownMenuItem>Mark as Unread</DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem className="text-red-500">
+                                                                 Mute Conversation
+                                                            </DropdownMenuItem>
+                                                       </>
+                                                  ) : selectedChat.type === "project" ? (
+                                                       <>
+                                                            <DropdownMenuItem>View Project Details</DropdownMenuItem>
+                                                            <DropdownMenuItem>Add Members</DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem>Leave Project</DropdownMenuItem>
+                                                       </>
+                                                  ) : (
+                                                       <>
+                                                            <DropdownMenuItem>View Task Details</DropdownMenuItem>
+                                                            <DropdownMenuItem>Mark as Complete</DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem>Unassign Yourself</DropdownMenuItem>
+                                                       </>
+                                                  )}
+                                             </DropdownMenuContent>
+                                        </DropdownMenu>
+                                   </div>
+                              </div>
+
+                              {/* Messages */}
+                              <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                                   <div className="space-y-4">
+                                        {messages.map((message) => {
+                                             const isCurrentUser = message.sentBy === user.uid;
+                                             const sender = getUserById(message.sentBy as string);
+
+                                             return (
+                                                  <div
+                                                       key={message.id}
+                                                       className={`flex ${
+                                                            isCurrentUser ? "justify-end" : "justify-start"
+                                                       }`}
+                                                  >
+                                                       <div className="flex max-w-[70%]">
+                                                            {!isCurrentUser && (
+                                                                 <Avatar className="h-8 w-8 mr-2 mt-1">
+                                                                      <AvatarImage
+                                                                           src={sender?.avatar || "/placeholder.svg"}
+                                                                           alt={sender?.name || ""}
+                                                                      />
+                                                                      <AvatarFallback>
+                                                                           {sender?.initials}
+                                                                      </AvatarFallback>
+                                                                 </Avatar>
+                                                            )}
+                                                            <div>
+                                                                 {!isCurrentUser && selectedChat.type !== "dm" && (
+                                                                      <p className="text-xs text-gray-500 mb-1">
+                                                                           {sender?.name}
+                                                                      </p>
+                                                                 )}
+                                                                 <div
+                                                                      className={`rounded-lg p-3 ${
+                                                                           isCurrentUser
+                                                                                ? "bg-primary text-primary-foreground"
+                                                                                : "bg-white border border-gray-200"
+                                                                      }`}
+                                                                 >
+                                                                      <p className="text-sm whitespace-pre-wrap">
+                                                                           {message.msgContent}
+                                                                      </p>
+                                                                 </div>
+                                                                 <p className="text-xs text-gray-500 mt-1">
+                                                                      {message.createdAt}
+                                                                 </p>
+                                                            </div>
+                                                       </div>
+                                                  </div>
+                                             );
+                                        })}
+                                        <div ref={messagesEndRef} />
+                                   </div>
+                              </div>
+
+                              {/* Message Input */}
+                              <div className="p-4 border-t bg-white">
+                                   <div className="flex items-center">
+                                        <Button variant="ghost" size="icon" type="button">
+                                             <Paperclip className="h-5 w-5 text-gray-500" />
+                                        </Button>
+                                        <div className="flex-1 mx-2">
+                                             <Input
+                                                  placeholder="Type a message..."
+                                                  value={newMessage}
+                                                  onChange={(e) => setNewMessage(e.target.value)}
+                                                  onKeyDown={handleKeyDown}
+                                                  className="border-gray-200"
+                                             />
+                                        </div>
+                                        <Button size="icon" onClick={handleSendMessage} disabled={!newMessage.trim()}>
+                                             <Send className="h-5 w-5" />
+                                        </Button>
+                                   </div>
+                              </div>
+                         </div>
+                    ) : (
+                         <div className="flex-1 flex items-center justify-center bg-gray-50">
+                              <div className="text-center">
+                                   <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                   <h3 className="text-lg font-medium text-gray-700">Select a conversation</h3>
+                                   <p className="text-gray-500 mt-1">
+                                        Choose a chat from the sidebar to start messaging
+                                   </p>
+                              </div>
+                         </div>
+                    )}
+
+                    {/* Team Members Sidebar */}
+                    <div className="w-64 border-l bg-white hidden lg:block">
+                         <div className="p-4 border-b">
+                              <h3 className="font-medium">Team Members</h3>
+                         </div>
+                         <div className="p-2 overflow-y-auto max-h-[calc(100vh-65px)]">
+                              {fetchingMembers &&
+                                   Array(4)
+                                        .fill(null)
+                                        .map((_, i) => (
+                                             <div key={i} className="flex gap-3 items-center">
+                                                  <Skeleton className="w-10 h-10 rounded-full" />
+                                                  <div>
+                                                       <Skeleton className="w-8 mb-3 h-2 rounded-md" />
+                                                       <Skeleton className="w-24 h-2 rounded-md" />
+                                                  </div>
+                                             </div>
+                                        ))}
+                              {Array.isArray(members) &&
+                                   !fetchingMembers &&
+                                   members
+                                        .filter((member) => member.id != user.uid)
+                                        .map((user) => (
+                                             <div
+                                                  key={user.id}
+                                                  className="flex items-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                                                  onClick={() => {
+                                                       const existingChat = Array.isArray(dmData)
+                                                            ? dmData.find((chat) => chat.userData.id === user.id)
+                                                            : undefined;
+                                                       if (existingChat) {
+                                                            setSelectedChat(existingChat);
+                                                            setActiveTab("dm");
+                                                       } else {
+                                                            setMessages([]);
+                                                            setSelectedChat({
+                                                                 userData: { ...user },
+                                                                 participants: [user],
+                                                                 type: "dm",
+                                                                 msgs: [],
+                                                                 lastMsg: {},
+                                                                 msgCount: 0,
+                                                                 userId: user.id,
+                                                            });
+                                                       }
+                                                  }}
+                                             >
+                                                  <div className="relative">
+                                                       <Avatar className="h-9 w-9">
+                                                            <AvatarImage
+                                                                 src={user.avatar || "/placeholder.svg"}
+                                                                 alt={user.name}
+                                                            />
+                                                            <AvatarFallback>{user.initials}</AvatarFallback>
+                                                       </Avatar>
+                                                       <span
+                                                            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${getStatusColor(
+                                                                 user.status,
+                                                            )}`}
+                                                       ></span>
+                                                  </div>
+                                                  <div className="ml-3">
+                                                       <p className="text-sm font-medium">{user.name}</p>
+                                                       <p className="text-xs text-gray-500">
+                                                            {user.status === "online" ? "Online" : `Offline`}
+                                                       </p>
+                                                  </div>
+                                             </div>
+                                        ))}
                          </div>
                     </div>
-               </main>
+               </div>
           </Layout>
      );
-}
-
-interface CategorySelectionProps {
-     setActiveTab: (tab: Category) => void;
-}
-
-const CategorySelection = ({ setActiveTab }: CategorySelectionProps) => {
-     return (
-          <Tabs
-               defaultValue="dm"
-               onValueChange={(val) => {
-                    setActiveTab(val as Category);
-               }}
-               className="w-full"
-          >
-               <TabsList className="flex items-center w-full">
-                    <TabsTrigger value="DM">DM</TabsTrigger>
-                    <TabsTrigger value="Projects">Projects</TabsTrigger>
-                    {/* Based on Task Next Version  */}
-               </TabsList>
-          </Tabs>
-     );
 };
+
+export default ChatInterface;

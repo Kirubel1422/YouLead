@@ -1,5 +1,6 @@
 import { DOTENV } from "@/constants/env";
-import { ITeam } from "@/types/team.types";
+import { IResponse } from "@/types/response.types";
+import { ITeam, ITeamMember } from "@/types/team.types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
@@ -14,7 +15,7 @@ const teamApi = createApi({
           baseUrl: DOTENV.API_ENDPOINT + "/teams",
           credentials: "include",
      }),
-     tagTypes: ["Teams"],
+     tagTypes: ["Teams", "TeamMembers"],
 
      endpoints: (builder) => ({
           // Join team by id
@@ -31,8 +32,25 @@ const teamApi = createApi({
           }),
 
           // GET: team information
+
+          // GET: team members
+          getTeamMembers: builder.query<ITeamMember[], string>({
+               query: (teamId) => ({
+                    url: `/members/${teamId}`,
+               }),
+
+               transformResponse: (response: IResponse) => (response.success ? response.data : null),
+
+               providesTags: (result: ITeamMember[] | undefined) =>
+                    Array.isArray(result)
+                         ? [
+                                ...result.map(({ id }) => ({ type: "TeamMembers" as const, id })),
+                                { type: "TeamMembers" as const, id: "LIST" },
+                           ]
+                         : [{ type: "TeamMembers" as const, id: "LIST" }],
+          }),
      }),
 });
 
-export const { useJoinTeamMutation } = teamApi;
+export const { useJoinTeamMutation, useGetTeamMembersQuery } = teamApi;
 export default teamApi;

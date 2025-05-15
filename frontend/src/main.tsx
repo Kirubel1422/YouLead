@@ -9,15 +9,13 @@ import { ToastProvider } from "./components/Toast.tsx";
 import { PersistGate } from "redux-persist/integration/react";
 
 createRoot(document.getElementById("root")!).render(
-     <StrictMode>
-          <Provider store={store}>
-               <BrowserRouter>
-                    <PersistGate persistor={persistor}>
-                         <ToastProvider>
-                              <App />
-                         </ToastProvider>
-                    </PersistGate>
-               </BrowserRouter>
-          </Provider>
-     </StrictMode>,
+     <Provider store={store}>
+          <BrowserRouter>
+               <PersistGate persistor={persistor}>
+                    <ToastProvider>
+                         <App />
+                    </ToastProvider>
+               </PersistGate>
+          </BrowserRouter>
+     </Provider>,
 );

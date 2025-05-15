@@ -12,6 +12,7 @@ import tasksApi from "@/api/tasks.api";
 import meetingsApi from "@/api/meeting.api";
 import activityApi from "@/api/activities.api";
 import calendarApi from "@/api/calendar.api";
+import messagesApi from "@/api/messages.api";
 
 const config = {
      key: "root",
@@ -31,6 +32,7 @@ const middlewares = [
      meetingsApi.middleware,
      activityApi.middleware,
      calendarApi.middleware,
+     messagesApi.middleware,
 ];
 
 export const store = configureStore({

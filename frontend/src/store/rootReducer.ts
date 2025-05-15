@@ -13,6 +13,7 @@ import tasksApi from "@/api/tasks.api";
 import meetingApi from "@/api/meeting.api";
 import activityApi from "@/api/activities.api";
 import calendarApi from "@/api/calendar.api";
+import dmMessageApi from "@/api/messages.api";
 
 const base = combineReducers({
      auth: authReducer,
@@ -34,6 +35,7 @@ const rootReducer = combineReducers({
      [meetingApi.reducerPath]: meetingApi.reducer,
      [activityApi.reducerPath]: activityApi.reducer,
      [calendarApi.reducerPath]: calendarApi.reducer,
+     [dmMessageApi.reducerPath]: dmMessageApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

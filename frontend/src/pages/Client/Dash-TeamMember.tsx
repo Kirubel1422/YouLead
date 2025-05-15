@@ -12,12 +12,20 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertCircle, BarChart3, Calendar, Clock, FileText, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, getDaysRemaining, getPriorityColor, getStatusColor, isOverdue, take } from "@/utils/basic";
+import {
+     formatDate,
+     getDaysRemaining,
+     getInitials,
+     getPriorityColor,
+     getStatusColor,
+     isOverdue,
+     take,
+} from "@/utils/basic";
 import { useMyTasksQuery } from "@/api/tasks.api";
 import { ITaskDetail, TaskFilter } from "@/types/task.types";
 import { useGetMainQuery } from "@/api/analytics.api";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 import { Empty } from "@/components/placeholder/empty";
@@ -28,6 +36,8 @@ import { useRecentActivititesQuery } from "@/api/activities.api";
 import { IActivity } from "@/types/activity.type";
 import { CalendarModal } from "@/components/modal/calendar/Calendar";
 import TaskDetail from "@/components/modal/task/TaskDetail";
+import { socket } from "@/services/socket";
+import { ITeamMember } from "@/types/team.types";
 
 export default function TeamMemberDashboard() {
      const { user } = useSelector((state: RootState) => state.base.auth);
@@ -36,6 +46,31 @@ export default function TeamMemberDashboard() {
      const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
      const [taskDetailOpen, setTaskDetailOpen] = useState<boolean>(false);
      const [targetTask, setTargetTask] = useState<ITaskDetail | undefined>();
+
+     // Initialize socket
+     useEffect(() => {
+          socket.connect();
+     }, []);
+
+     useEffect(() => {
+          // Setup socket
+          socket.emit("setup", user.uid);
+
+          // Open to Receive
+          socket.on("receive", (msgData) => console.log(msgData));
+
+          // When online
+          const handleActive = () => {
+               socket.emit("online", user.uid);
+          };
+
+          // When offline
+          const handleBlur = () => {
+               socket.emit("offline", user.uid);
+          };
+
+          handleActive();
+     }, []);
 
      // Fetch my tasks
      const { data, isFetching: fetchingTasks } = useMyTasksQuery(taskFilter, {

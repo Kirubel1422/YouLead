@@ -1,3 +1,5 @@
+type OnlineStatus = "online" | "offline";
+
 export interface TeamState {
      team: ITeam | null;
 }
@@ -24,4 +26,14 @@ export interface ITeamDetail {
      members: number;
      projects: number;
      organization: string;
+}
+
+export interface ITeamMember {
+     id: string;
+     name: string;
+     avatar: string;
+     initials: string;
+     status: OnlineStatus;
+     role: string;
+     teamId: string;
 }
