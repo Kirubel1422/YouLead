@@ -1,12 +1,12 @@
-import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
-import { IMessage, ReadMessageType } from "src/interfaces/message.interface";
+import { IMessage } from "src/interfaces/message.interface";
 import { ApiError } from "src/utils/api/api.response";
 import { AuthServices } from "../auth/auth.service";
 import dayjs from "dayjs";
 import isYesterday from "dayjs/plugin/isYesterday";
 import isToday from "dayjs/plugin/isToday";
+import { Helper } from "src/utils/helpers";
 
 dayjs.extend(isYesterday);
 dayjs.extend(isToday);
@@ -18,6 +18,7 @@ export class MessageService {
     this.editMessage = this.editMessage.bind(this);
     this.readMessage = this.readMessage.bind(this);
     this.fetchDM = this.fetchDM.bind(this);
+    this.readMessage = this.readMessage.bind(this);
   }
 
   // Save message
@@ -74,89 +75,102 @@ export class MessageService {
   }
 
   // Read message - append to readBy array
-  async readMessage(messageId: string, readerData: ReadMessageType) {
+  async readMessage(msgData: Partial<IMessage>) {
     return await db.runTransaction(async (transaction) => {
       // Check messageId
-      const messageRef = db.collection(COLLECTIONS.MESSAGES).doc(messageId);
-      const messageSnap = await transaction.get(messageRef);
+      const messageQ = db
+        .collection(COLLECTIONS.MESSAGES)
+        .where("createdAt", "==", msgData.createdAt)
+        .where("sentBy", "==", msgData.sentBy)
+        .where("receivedBy", "==", msgData.receivedBy)
+        .limit(1);
+      const messageSnap = await transaction.get(messageQ);
 
-      if (!messageSnap.exists) {
+      if (messageSnap.empty) {
         throw new ApiError(
           "The message you are trying to read is not found.",
           400
         );
       }
 
-      transaction.update(messageRef, {
-        readBy: firestore.FieldValue.arrayUnion(readerData),
+      transaction.update(messageSnap.docs[0].ref, {
+        isRead: true,
+        readBy: [msgData.receivedBy],
       });
     });
   }
 
-  // Fetch user messages
   async fetchDM(userId: string): Promise<any[]> {
-    const sentFromMeQ = db
+    // Get messages WHERE user is either sender OR receiver
+    const sentMessages = db
       .collection(COLLECTIONS.MESSAGES)
       .where("sentBy", "==", userId)
       .where("sentIn", "==", "dm")
       .orderBy("createdAt");
-    const receievedByMeQ = db
-      .collection(COLLECTIONS.MEETINGS)
+
+    const receivedMessages = db
+      .collection(COLLECTIONS.MESSAGES) // Fixed collection name
       .where("receivedBy", "==", userId)
       .where("sentIn", "==", "dm")
       .orderBy("createdAt");
 
-    const [sentFromMe, receievedByMe] = await Promise.all([
-      sentFromMeQ.get(),
-      receievedByMeQ.get(),
+    const [sentSnapshot, receivedSnapshot] = await Promise.all([
+      sentMessages.get(),
+      receivedMessages.get(),
     ]);
 
-    const combinedMsgs = [
-      ...sentFromMe.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-      ...receievedByMe.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
-    ] as IMessage[];
+    // Combine and sort all messages chronologically
+    const allMessages = [
+      ...sentSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+      ...receivedSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+    ].sort(
+      (a: any, b: any) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    ) as IMessage[];
 
-    // Parse user ids
-    const userIds = new Set(
-      combinedMsgs.map((doc) => {
-        const isSentFromMe = doc.sentBy == userId;
-        return isSentFromMe ? doc.receivedBy : doc.sentBy;
-      })
-    );
+    // Group messages by conversation partner
+    const chatMap = new Map<string, IMessage[]>();
 
-    // Unique user ids
-    const uniqueUserIds = [...userIds];
+    for (const msg of allMessages) {
+      // Determine conversation partner ID
+      const partnerId = msg.sentBy === userId ? msg.receivedBy : msg.sentBy;
 
-    const chats = uniqueUserIds.map((uuid: string) => {
-      return AuthServices.chatUserInfo(uuid).then((res) => {
-        const msgs = combinedMsgs.filter(
-          (msg) => msg.receivedBy == uuid || msg.sentBy == uuid
-        );
+      if (!chatMap.has(partnerId)) {
+        chatMap.set(partnerId, []);
+      }
+      chatMap.get(partnerId)?.push(msg);
+    }
 
-        const lastMsgData = msgs[msgs.length - 1];
-        const lastMsg = {
-          id: lastMsgData.id,
-          sentBy: lastMsgData.sentBy,
-          msgContent: lastMsgData.msgContent,
-          createdAt: dayjs(lastMsgData.createdAt).isToday()
-            ? dayjs(lastMsgData.createdAt).format("hh:mm A")
-            : dayjs(lastMsgData.createdAt).isYesterday()
-            ? "Yesterday"
-            : dayjs(lastMsgData.createdAt).format("ll"),
-        };
+    // Create chat objects
+    const chatPromises = Array.from(chatMap.entries()).map(
+      async ([partnerId, msgs]) => {
+        const partnerInfo = await AuthServices.chatUserInfo(partnerId);
 
         return {
-          userId: uuid,
-          userData: res,
-          msgs,
+          userId: partnerId,
+          userData: partnerInfo,
+          msgs: msgs
+            .sort(
+              (a: any, b: any) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            )
+            .map((msg) => ({
+              ...msg,
+              createdAt: Helper.formatChatTime(msg.createdAt as string),
+            })),
           msgsCount: msgs.length,
-          lastMsg,
+          lastMsg: {
+            ...msgs[msgs.length - 1],
+            createdAt: Helper.formatChatTime(
+              msgs[msgs.length - 1].createdAt as string
+            ),
+          },
           type: "dm",
         };
-      });
-    });
+      }
+    );
 
-    const [result] = await Promise.all([await Promise.all(chats)]);
-    return result;
+    return Promise.all(chatPromises);
   }
 }
