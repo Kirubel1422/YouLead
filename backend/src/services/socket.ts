@@ -1,8 +1,10 @@
 import { Server } from "http";
 import { Server as SocketServer, Socket } from "socket.io";
-import { IMessage, ReadMessageType } from "src/interfaces/message.interface";
+import { IMessage } from "src/interfaces/message.interface";
+import { IProfile } from "src/interfaces/user.interface";
 import { MessageService } from "src/modules/messages/message.service";
 import { ApiError } from "src/utils/api/api.response";
+import { Helper } from "src/utils/helpers";
 import logger from "src/utils/logger/logger";
 
 let io: SocketServer;
@@ -59,23 +61,58 @@ const initializeSocket = (server: Server) => {
     });
 
     // On sending messages
-    socket.on("send", (msgData: IMessage) => {
-      const { sentIn, receivedBy, sentBy } = msgData;
+    socket.on(
+      "send",
+      ({
+        msg: msgData,
+        senderData,
+      }: {
+        msg: IMessage;
+        senderData: IProfile;
+      }) => {
+        const { sentIn, receivedBy, sentBy } = msgData;
 
-      console.log(`Sent Message (${sentIn}): `, msgData);
+        console.log(`Sent Message (${sentIn}): `, msgData);
 
-      logger.debug("Sender ID: " + sentBy);
-      logger.debug("Receiver ID: " + receivedBy);
+        logger.debug("Sender ID: " + sentBy);
+        logger.debug("Receiver ID: " + receivedBy);
 
-      // Send message
-      io.to(receivedBy as string).emit("receive", msgData);
-      return;
-      // Save Message
+        // Send message
+        io.to(receivedBy as string).emit("receive", {
+          msg: {
+            ...msgData,
+            createdAt: Helper.formatChatTime(msgData.createdAt as string),
+          },
+          senderData: {
+            ...senderData,
+            initials:
+              senderData?.firstName.charAt(0) + senderData?.lastName?.charAt(0),
+            name: senderData?.firstName + " " + senderData?.lastName,
+          },
+        });
+
+        // Save Message
+        messageService
+          .saveMessage(msgData)
+          .then(() => null)
+          .catch((error: any) => {
+            throw new ApiError("Failed to save message", 400);
+          });
+      }
+    );
+
+    socket.on("readLastMsg", (data) => {
+      logger.debug("Read last message");
+
       messageService
-        .saveMessage(msgData)
-        .then(() => null)
-        .catch((error: any) => {
-          throw new ApiError("Failed to save message", 400);
+        .readMessage(data)
+        .then(() => {
+          io.to(data.sentBy).emit("readAck", {
+            success: true,
+          });
+        })
+        .catch(() => {
+          socket.emit("readAck", { success: false });
         });
     });
 
@@ -115,26 +152,26 @@ const initializeSocket = (server: Server) => {
     );
 
     // On read message
-    socket.on(
-      "read",
-      (data: {
-        messageId: string;
-        readerData: ReadMessageType;
-        receivedBy: string;
-      }) => {
-        const { messageId, readerData, receivedBy } = data;
+    // socket.on(
+    //   "read",
+    //   (data: {
+    //     messageId: string;
+    //     readerData: ReadMessageType;
+    //     receivedBy: string;
+    //   }) => {
+    //     const { messageId, readerData, receivedBy } = data;
 
-        // Set read
-        messageService
-          .readMessage(messageId, readerData)
-          .then(() => {
-            io.to(receivedBy).emit("newReader", readerData);
-          })
-          .catch(() => {
-            io.to(receivedBy).emit("readAck", { success: false });
-          });
-      }
-    );
+    //     // Set read
+    //     messageService
+    //       .readMessage(messageId, readerData)
+    //       .then(() => {
+    //         io.to(receivedBy).emit("newReader", readerData);
+    //       })
+    //       .catch(() => {
+    //         io.to(receivedBy).emit("readAck", { success: false });
+    //       });
+    //   }
+    // );
 
     // On disconnect
     socket.on("disconnect", () => null);
