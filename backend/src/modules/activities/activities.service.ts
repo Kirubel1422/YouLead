@@ -306,6 +306,7 @@ export class ActivityService {
     const projectData = await ProjectService.getProjectById(
       projectId as string
     );
+
     const projectName = projectData.name;
 
     const msg = `${fullName} assigned ${names?.join(
@@ -320,6 +321,7 @@ export class ActivityService {
       ...this.helper.fillTimeStamp(),
       context: "task",
     };
+
     await db.collection(COLLECTIONS.ACTIVITES).add(activity);
   }
 

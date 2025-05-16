@@ -167,6 +167,7 @@ export class TaskService {
         createdBy,
         names,
         taskName: taskData.name,
+        projectId: taskData.projectId,
       });
 
       return { message: "Successfully assigned Task!" };
