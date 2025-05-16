@@ -37,12 +37,12 @@ export const sidebar: SidebarItem[] = [
           to: "/dashboard/calendar",
           icon: Calendar,
      },
-     {
-          id: "messages",
-          label: "Messages",
-          to: "/dashboard/messages",
-          icon: MessageSquare,
-     },
+     // {
+     //      id: "messages",
+     //      label: "Messages",
+     //      to: "/dashboard/messages",
+     //      icon: MessageSquare,
+     // },
 ];
 
 export type OnboardingSidebarItem = {
