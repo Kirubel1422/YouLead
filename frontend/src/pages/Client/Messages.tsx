@@ -18,19 +18,72 @@ import { useGetTeamMembersQuery } from "@/api/team.api";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
 import { ITeamMember } from "@/types/team.types";
-import { exists, getInitials } from "@/utils/basic";
+import { formatChatTime, getInitials } from "@/utils/basic";
 import { Skeleton } from "@/components/ui/skeleton";
 import { socket } from "@/services/socket";
 import { useFetchDMMessagesQuery } from "@/api/messages.api";
-import { IChat, IMessage, OnlineStatus } from "@/types/messages.types";
+import { IChat, IChatUser, IMessage, OnlineStatus } from "@/types/messages.types";
 import { notificationSound } from "@/assets";
+import { useLocation } from "react-router";
+
+const intersectionObserverOption = {
+     root: document.querySelector("#messages-container"),
+     rootMargin: "0px",
+     threshold: 0.25,
+};
 
 export const ChatInterface = () => {
+     // Redux
      const { user } = useSelector((state: RootState) => state.base.auth);
+
+     const location = useLocation();
+
+     // Intersection Observer
+     const containerRef = useRef(null);
+     const [isVisible, setIsVisible] = useState(false);
+     const [messages, setMessages] = useState<IMessage[]>([] as IMessage[]);
+
+     const callbackFunction = (entries: IntersectionObserverEntry[]) => {
+          const [entry] = entries;
+          setIsVisible(entry.isIntersecting);
+
+          if (entry.isIntersecting) {
+               const lastMessage = messages[messages.length - 1];
+               const dt = {
+                    createdAt: lastMessage.updatedAt,
+                    receivedBy: lastMessage.receivedBy,
+                    sentBy: lastMessage.sentBy,
+               };
+
+               console.log("Ready to be read: ", !lastMessage.isRead && lastMessage?.sentBy != user.uid);
+               console.log(lastMessage);
+               if (!lastMessage.isRead && lastMessage?.sentBy != user.uid) socket.emit("readLastMsg", dt);
+          }
+     };
+
+     useEffect(() => {
+          const observer = new IntersectionObserver(callbackFunction, intersectionObserverOption);
+          if (containerRef.current) observer.observe(containerRef.current);
+
+          return () => {
+               if (containerRef.current) observer.unobserve(containerRef.current);
+          };
+     }, [messages.length]);
+
+     useEffect(() => {
+          const handleReadAck = (data: { success: boolean }) => {
+               console.log(data);
+          };
+          socket.on("readAck", handleReadAck);
+
+          return () => {
+               socket.off("readAck", handleReadAck); // Cleanup
+          };
+     }, []);
+
      const [activeTab, setActiveTab] = useState<"dm" | "projects" | "tasks">("dm");
 
      const [selectedChat, setSelectedChat] = useState<IChat | null>();
-     const [messages, setMessages] = useState<IMessage[]>([] as IMessage[]);
 
      const [newMessage, setNewMessage] = useState("");
      const [searchQuery, setSearchQuery] = useState("");
@@ -38,7 +91,14 @@ export const ChatInterface = () => {
      const messagesEndRef = useRef<HTMLDivElement>(null);
 
      // Fetch DM list
-     const { data: dmData, isSuccess: fetchDmSuccess } = useFetchDMMessagesQuery(undefined);
+     const {
+          data: dmData,
+          isSuccess: fetchDmSuccess,
+          refetch: refetchDMs,
+     } = useFetchDMMessagesQuery(undefined, {
+          refetchOnFocus: true,
+          refetchOnReconnect: true,
+     });
      const [dmMessages, setDmMessages] = useState<IChat[]>([] as IChat[]);
 
      // Use useRef to keep the latest value of dmMessages
@@ -46,19 +106,28 @@ export const ChatInterface = () => {
 
      useEffect(() => {
           dmMessagesRef.current = [...dmMessages];
+          // Apply changes to messages list
+          const userId = selectedChat?.userId;
+          const match = dmMessagesRef?.current.find((msg) => msg.userId == userId);
+
+          setMessages((prev) => (Array.isArray(match?.msgs) ? match.msgs : prev));
      }, [dmMessages]);
 
      // Save fetched messages to local state
      useEffect(() => {
           if (fetchDmSuccess) {
-               setDmMessages(dmData);
+               setDmMessages(dmData as IChat[]);
           }
-     }, []);
+     }, [fetchDmSuccess, dmData, location.pathname]);
 
      // Filtered DM list
      const filteredDms = Array.isArray(dmMessages)
           ? dmMessages.filter((dm) => {
-                 return dm.msgs.some((msg) => msg.msgContent.includes(searchQuery));
+                 const userMatch = dm.userData?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+                 const messageMatch = dm.msgs.some((msg) =>
+                      msg.msgContent.toLowerCase().includes(searchQuery.toLowerCase()),
+                 );
+                 return userMatch || messageMatch;
             })
           : [];
 
@@ -73,25 +142,23 @@ export const ChatInterface = () => {
 
           // Setup socket
           socket.emit("setup", user.uid);
-     }, []);
+     }, [socket]);
 
      useEffect(() => {
-          const handleReceive = (msgData: IMessage) => {
+          const handleReceive = ({ msg: msgData, senderData }: { msg: IMessage; senderData: IChatUser }) => {
                const senderId = msgData.sentBy;
-               console.log("New Message from: ", senderId);
-
-               const dmMessagesCpy = [...dmMessagesRef.current];
-
                setDmMessages((prev) => {
                     const chatIndex = prev.findIndex((chat) => chat.userId === senderId);
-
                     if (chatIndex !== -1) {
                          // Chat exists, update it immutably
                          const updatedDmMessages = [...prev]; // Create a copy
                          updatedDmMessages[chatIndex] = {
                               ...updatedDmMessages[chatIndex],
                               msgs: [...updatedDmMessages[chatIndex].msgs, msgData],
+                              lastMsg: msgData,
+                              userData: senderData,
                          };
+
                          return updatedDmMessages;
                     } else {
                          // Chat doesn't exist, create a new chat entry
@@ -103,7 +170,7 @@ export const ChatInterface = () => {
                                    lastMsg: msgData,
                                    msgCount: 1,
                                    type: "dm",
-                                   userData: {},
+                                   userData: senderData,
                               },
                          ] as IChat[];
                     }
@@ -131,7 +198,6 @@ export const ChatInterface = () => {
      //      if (activeTab === "tasks") return chat.type === "task" && matchesSearch;
      //      return matchesSearch;
      // });
-     const filteredChats = [];
 
      // Scroll to bottom of messages
      useEffect(() => {
@@ -154,11 +220,28 @@ export const ChatInterface = () => {
                updatedAt: new Date().toISOString(),
                receivedBy: selectedChat.userId,
                sentIn: "dm",
+               isRead: false,
           };
 
-          socket.emit("send", newMsg);
+          socket.emit("send", { msg: newMsg, senderData: user.profile });
 
-          setMessages((prev) => [...prev, newMsg]);
+          setDmMessages((prev) => {
+               const chatIndex = prev.findIndex((chat) => chat.userId === newMsg.receivedBy);
+               if (chatIndex !== -1) {
+                    // Chat exists, update it immutably
+                    const updatedDmMessages = [...prev]; // Create a copy
+                    updatedDmMessages[chatIndex] = {
+                         ...updatedDmMessages[chatIndex],
+                         msgs: [...updatedDmMessages[chatIndex].msgs, newMsg],
+                         lastMsg: newMsg,
+                    };
+
+                    return updatedDmMessages;
+               } else {
+                    return prev;
+               }
+          });
+          // setMessages((prev) => [...prev, newMsg]);
           setNewMessage("");
      };
 
@@ -243,11 +326,11 @@ export const ChatInterface = () => {
                               onValueChange={(value) => setActiveTab(value as any)}
                               className="flex-1 flex flex-col"
                          >
-                              <TabsList className="grid grid-cols-3 mx-4 mt-2">
-                                   <TabsTrigger value="dm">DMs</TabsTrigger>
-                                   <TabsTrigger value="projects">Projects</TabsTrigger>
-                                   <TabsTrigger value="tasks">Tasks</TabsTrigger>
-                              </TabsList>
+                              {/* <TabsList className="grid grid-cols-3 mx-4 mt-2"> */}
+                              {/* <TabsTrigger value="dm">DMs</TabsTrigger> */}
+                              {/* <TabsTrigger value="projects">Projects</TabsTrigger> */}
+                              {/* <TabsTrigger value="tasks">Tasks</TabsTrigger> */}
+                              {/* </TabsList> */}
 
                               <div className="flex-1 overflow-y-auto p-2">
                                    <TabsContent value="dm" className="m-0 space-y-1">
@@ -258,6 +341,7 @@ export const ChatInterface = () => {
                                                        selectedChat?.userId === chat.userId ? "bg-gray-100" : ""
                                                   }`}
                                                   onClick={() => {
+                                                       refetchDMs();
                                                        setSelectedChat(chat);
                                                   }}
                                              >
@@ -282,7 +366,7 @@ export const ChatInterface = () => {
                                                             </p>
                                                             {chat.lastMsg && (
                                                                  <span className="text-xs text-gray-500">
-                                                                      {chat.lastMsg.createdAt}
+                                                                      {formatChatTime(chat.lastMsg.createdAt as string)}
                                                                  </span>
                                                             )}
                                                        </div>
@@ -457,9 +541,9 @@ export const ChatInterface = () => {
                               </div>
 
                               {/* Messages */}
-                              <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                              <div className="flex-1 overflow-y-auto p-4 bg-gray-50" id="messages-container">
                                    <div className="space-y-4">
-                                        {messages.map((message) => {
+                                        {messages.map((message, i) => {
                                              const isCurrentUser = message.sentBy === user.uid;
                                              const sender = getUserById(message.sentBy as string);
 
@@ -469,6 +553,16 @@ export const ChatInterface = () => {
                                                        className={`flex ${
                                                             isCurrentUser ? "justify-end" : "justify-start"
                                                        }`}
+                                                       ref={
+                                                            i === messages.length - 1 && !isCurrentUser
+                                                                 ? containerRef
+                                                                 : null
+                                                       }
+                                                       id={
+                                                            i === messages.length - 1 && !isCurrentUser
+                                                                 ? "target"
+                                                                 : undefined
+                                                       }
                                                   >
                                                        <div className="flex max-w-[70%]">
                                                             {!isCurrentUser && (
@@ -500,7 +594,7 @@ export const ChatInterface = () => {
                                                                       </p>
                                                                  </div>
                                                                  <p className="text-xs text-gray-500 mt-1">
-                                                                      {message.createdAt}
+                                                                      {formatChatTime(message.createdAt as string)}
                                                                  </p>
                                                             </div>
                                                        </div>
@@ -571,24 +665,26 @@ export const ChatInterface = () => {
                                                   key={user.id}
                                                   className="flex items-center p-2 rounded-md hover:bg-gray-100 cursor-pointer"
                                                   onClick={() => {
-                                                       const existingChat = Array.isArray(dmData)
-                                                            ? dmData.find((chat) => chat.userData.id === user.id)
-                                                            : undefined;
+                                                       const existingChat = dmMessages.find(
+                                                            (chat) => chat.userId === user.id,
+                                                       );
                                                        if (existingChat) {
                                                             setSelectedChat(existingChat);
-                                                            setActiveTab("dm");
                                                        } else {
-                                                            setMessages([]);
-                                                            setSelectedChat({
-                                                                 userData: { ...user },
-                                                                 participants: [user],
-                                                                 type: "dm",
+                                                            const newChat: IChat = {
+                                                                 userId: user.id,
                                                                  msgs: [],
                                                                  lastMsg: {},
                                                                  msgCount: 0,
-                                                                 userId: user.id,
-                                                            });
+                                                                 type: "dm",
+                                                                 userData: user,
+                                                                 participants: [user],
+                                                            };
+                                                            setDmMessages((prev) => [...prev, newChat]);
+                                                            setSelectedChat(newChat);
                                                        }
+                                                       refetchDMs();
+                                                       setActiveTab("dm");
                                                   }}
                                              >
                                                   <div className="relative">
