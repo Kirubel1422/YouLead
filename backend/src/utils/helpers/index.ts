@@ -26,6 +26,18 @@ export class Helper {
     return dayjs(dateString).format("YYYY-MM-DD");
   }
 
+  static formatChatTime(dateString: string) {
+    const date = dayjs(dateString);
+    const isToday = date.isToday();
+    const isYesterday = date.isYesterday();
+    const format = isToday
+      ? "h:mm A"
+      : isYesterday
+      ? "[Yesterday] h:mm A"
+      : "DD/MM/YYYY h:mm A";
+    return date.format(format);
+  }
+
   getInitials(firstName: string, lastName?: string) {
     const firstInitial = firstName.charAt(0);
     const lastInitial = lastName ? lastName.charAt(0) : "";
