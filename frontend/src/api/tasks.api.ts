@@ -54,8 +54,46 @@ const tasksApi = createApi({
                invalidatesTags: (msg: string | undefined, _, taskData: ITaskMetaData) =>
                     !!msg ? [{ type: "Tasks" as const, id: taskData.taskId }] : [],
           }),
+
+          // Handle Task Assignment
+          handleTaskAssign: builder.mutation<string, { taskId: string; assignedTo: string[] }>({
+               query: ({ taskId, assignedTo }) => ({
+                    url: `/assign/${taskId}`,
+                    method: "POST",
+                    body: { assignedTo },
+               }),
+               transformResponse: (resp: IResponse) => (resp.success ? "Task assigned!" : ""),
+          }),
+
+          // Handle Task Unassignment
+          handleTaskUnAssign: builder.mutation<string, { taskId: string; memberId: string }>({
+               query: ({ taskId, memberId }) => ({
+                    url: `/unassign/${taskId}?memberId=${memberId}`,
+                    method: "PUT",
+               }),
+               transformResponse: (resp: IResponse) => (resp.success ? "Task unassigned!" : ""),
+          }),
+
+          // Extend Deadline
+          handleDeadline: builder.mutation<string, Record<string, string>>({
+               query: ({ deadline, taskId }) => ({
+                    url: `/deadline/${taskId}?newDeadline=${deadline}`,
+                    method: "PUT",
+               }),
+
+               transformResponse: (resp: IResponse) => (resp.success ? "Deadline updated!" : ""),
+
+               invalidatesTags: (_: string | undefined) => (_ != "" ? [{ type: "Tasks", id: "LIST" }] : []),
+          }),
      }),
 });
 
-export const { useMyTasksQuery, useMarkTaskCompleteMutation, useUpdateProgressMutation } = tasksApi;
+export const {
+     useMyTasksQuery,
+     useMarkTaskCompleteMutation,
+     useUpdateProgressMutation,
+     useHandleTaskAssignMutation,
+     useHandleTaskUnAssignMutation,
+     useHandleDeadlineMutation,
+} = tasksApi;
 export default tasksApi;

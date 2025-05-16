@@ -4,10 +4,19 @@ import { IResponse } from "@/types/response.types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-export interface MyProjects {
+export interface IMyProjects {
      total: number;
-     projects: IProject[];
+     projects: Partial<IProject>[];
 }
+
+export interface IProjectMembers {
+     id: string;
+     name: string;
+     email: string;
+     role: string;
+     avatar: string;
+}
+
 const projectsApi = createApi({
      reducerPath: "projectsApi",
      baseQuery: fetchBaseQuery({
@@ -19,7 +28,7 @@ const projectsApi = createApi({
 
      endpoints: (builder) => ({
           // Fetch my projects
-          fetchMyProjects: builder.query<MyProjects, Pagination & { teamId: string }>({
+          fetchMyProjects: builder.query<IMyProjects, Pagination & { teamId: string }>({
                query: ({ page = 1, limit, teamId }) => ({
                     url: `/my?teamId=${teamId}&page=${page}&limit=${limit}`,
                     credentials: "include",
@@ -35,8 +44,14 @@ const projectsApi = createApi({
                invalidatesTags: (resp: string | undefined, _, projectId) =>
                     resp ? [{ type: "Projects" as const, id: projectId }] : [],
           }),
+
+          // Fetch project members
+          fetchProjectMembers: builder.query<IProjectMembers[], string>({
+               query: (projectId) => `/members/${projectId}`,
+               transformResponse: (resp: IResponse) => (resp.success ? resp.data : []),
+          }),
      }),
 });
 
-export const { useFetchMyProjectsQuery } = projectsApi;
+export const { useFetchMyProjectsQuery, useLazyFetchProjectMembersQuery } = projectsApi;
 export default projectsApi;

@@ -24,6 +24,7 @@ const messagesApi = createApi({
                                 ...resp.map(({ userId }) => ({ type: "Messages" as const, id: userId })),
                            ]
                          : [],
+               keepUnusedDataFor: 0,
           }),
      }),
 });
