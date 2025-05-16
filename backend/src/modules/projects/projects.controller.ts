@@ -14,7 +14,21 @@ export class ProjectController {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.removeMember = this.removeMember.bind(this);
     this.my = this.my.bind(this);
+    this.getProjectMembers = this.getProjectMembers.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
+  }
+
+  // Get project members controller
+  async getProjectMembers(req: Request, res: Response, next: NextFunction) {
+    try {
+      const members = await this.projectService.fetchProjectMembers(
+        req.params.projectId,
+        req.user.uid
+      );
+      res.json(new ApiResp("Members fetched successfully", 200, true, members));
+    } catch (error) {
+      next(error);
+    }
   }
 
   // Create Project Controller

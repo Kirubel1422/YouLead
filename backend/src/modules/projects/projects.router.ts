@@ -12,6 +12,12 @@ const projectController = new ProjectController();
 
 router.get("/my", authMiddlewares.validate, projectController.getMyProjects);
 
+router.get(
+  "/members/:projectId",
+  authMiddlewares.validate,
+  projectController.getProjectMembers
+);
+
 router.post(
   "/create",
   authMiddlewares.validateTeamLeader,

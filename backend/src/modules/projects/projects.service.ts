@@ -33,6 +33,43 @@ export class ProjectService {
     this.markAsComplete = this.markAsComplete.bind(this);
     this.deleteProject = this.deleteProject.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
+    this.fetchProjectMembers = this.fetchProjectMembers.bind(this);
+  }
+
+  // Fetch project members
+  async fetchProjectMembers(
+    projectId: string,
+    userId: string
+  ): Promise<Partial<IUser & { id: string }>[]> {
+    const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+    const projectSnap = await projectRef.get();
+
+    if (!projectSnap.exists) {
+      throw new ApiError("Project not found", 400);
+    }
+
+    const projectData = projectSnap.data() as IProject;
+
+    // if (projectData.createdBy != userId) {
+    //   throw new ApiError("Unauthorized", 401);
+    // }
+
+    if (projectData.members.length == 0) {
+      return [];
+    }
+
+    // Fetch all members
+    const membersRef = db
+      .collection(COLLECTIONS.USERS)
+      .where("uid", "in", projectData.members);
+
+    const membersSnap = await membersRef.get();
+
+    return membersSnap.docs.map((doc) => ({
+      name: doc.data().profile.firstName + " " + doc.data().profile.lastName,
+      email: doc.data().profile.email,
+      id: doc.id,
+    })) as Partial<IUser & { id: string }>[];
   }
 
   // Create Project
@@ -338,7 +375,7 @@ export class ProjectService {
     userId: string,
     reqTeamId: string,
     { page, limit }: Pagination
-  ): Promise<{ total: number; projects: IProject[] }> {
+  ): Promise<{ total: number; projects: Partial<IProject>[] }> {
     // Parse teamid from the user
     const userRef = db.collection(COLLECTIONS.USERS).doc(userId);
     const userData = (await userRef.get()).data();
@@ -350,6 +387,23 @@ export class ProjectService {
     logger.info(`reqTeamId:  ${reqTeamId}  - teamId: ${teamId}`);
     if (teamId != reqTeamId) {
       throw new ApiError("Unauthorized to read projects.", 403);
+    }
+
+    // Check user role and if it's the leader return all projects
+    if (userData?.role === "teamLeader") {
+      const projectsQ = db
+        .collection(COLLECTIONS.PROJECTS)
+        .where("teamId", "==", teamId)
+        .where("createdBy", "==", userId);
+
+      const total = (await projectsQ.get()).size; // Size of all matching docs
+      const paginatedQuery = projectsQ.offset((page - 1) * limit).limit(limit);
+      const paginatedQueryRef = await paginatedQuery.get();
+      const projects = paginatedQueryRef.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Partial<IProject>[];
+      return { total, projects };
     }
 
     // Read projects which contain this user
