@@ -6,11 +6,12 @@ export type ReadMessageType = Partial<IProfile>;
 export interface IMessage {
   id?: string;
   sentBy: string;
-  readBy?: ReadMessageType[];
+  readBy?: ReadMessageType[]; // For project and task chats
   sentIn: SentInTypes;
   receivedBy: string; // Represent's UID, Project ID, and Task ID
   fileId?: string;
   editted?: boolean;
+  isRead: boolean;
 
   msgContent: string;
 

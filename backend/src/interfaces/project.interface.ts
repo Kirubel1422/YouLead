@@ -8,6 +8,14 @@ export interface ProjectStatus {
   updatedAt: string;
 }
 
+export interface IProjectMembers {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar: string;
+}
+
 export interface IProject {
   id?: string;
   createdBy: string;
@@ -21,7 +29,7 @@ export interface IProject {
   updatedAt: string;
 }
 
-export interface Pagination{
+export interface Pagination {
   limit: number;
   page: number;
 }

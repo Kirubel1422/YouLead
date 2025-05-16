@@ -1,3 +1,5 @@
+import { IProjectMembers } from "./project.interface";
+
 type TaskStatusType = "pending" | "completed" | "pastDue";
 
 export interface TaskStatus {
@@ -27,8 +29,9 @@ export interface ITask {
   priority: TaskPriorityType;
 }
 
-export interface ITaskDetail extends ITask {
+export interface ITaskDetail extends Omit<ITask, "assignedTo"> {
   projectName: string;
+  assignedTo: IProjectMembers[];
 }
 
 export interface ITaskMetaData {
