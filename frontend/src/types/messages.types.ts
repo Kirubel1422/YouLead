@@ -11,7 +11,8 @@ export interface IMessage {
      receivedBy: string; // Represent's UID, Project ID, and Task ID
      fileId?: string;
      editted?: boolean;
-
+     isRead: boolean;
+     
      msgContent: string;
 
      createdAt?: string;
