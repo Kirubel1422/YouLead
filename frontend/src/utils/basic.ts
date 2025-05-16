@@ -1,5 +1,5 @@
 import { UserRole } from "@/types/user.types";
-import { formatDistance } from "date-fns";
+import { format, formatDistance, isSameDay, isToday, isValid, parseISO, subDays } from "date-fns";
 
 export const take = (data: Array<any>, amount: number): Array<any> => {
      if (data.length == 0) {
@@ -20,6 +20,25 @@ export const getRoleLabel = (role: UserRole) => {
           case "admin":
                return "Admin";
      }
+};
+
+export const formatChatTime = (dateString: string): string => {
+     if (!dateString) return "";
+
+     const date = parseISO(dateString);
+     if (!isValid(date)) return dateString;
+
+     const today = new Date();
+
+     if (isToday(date)) {
+          return format(date, "h:mm a");
+     }
+
+     if (isSameDay(date, subDays(today, 1))) {
+          return `Yesterday ${format(date, "h:mm a")}`;
+     }
+
+     return format(date, "dd/MM/yyyy h:mm a");
 };
 
 export const getStatusColor = (status: string) => {
