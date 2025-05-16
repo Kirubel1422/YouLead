@@ -107,7 +107,8 @@ export class TaskController {
     try {
       const data = await this.taskService.fetchMyTasks(
         req.user.uid,
-        req.query.deadline as TaskFilter
+        req.query.deadline as TaskFilter,
+        req.user.role
       );
       res.json(new ApiResp("Successfully fetched tasks.", 200, true, data));
     } catch (error) {

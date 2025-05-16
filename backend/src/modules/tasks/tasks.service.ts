@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { firestore } from "firebase-admin";
 import { db } from "src/configs/firebase";
 import { COLLECTIONS } from "src/constants/firebase.collections";
-import { IProject } from "src/interfaces/project.interface";
+import { IProject, IProjectMembers } from "src/interfaces/project.interface";
 import {
   type ITask,
   type ITaskDetail,
@@ -18,6 +18,7 @@ import {
 import { ProjectService } from "../projects/projects.service";
 import { ActivityService } from "../activities/activities.service";
 import logger from "src/utils/logger/logger";
+import { AuthServices } from "../auth/auth.service";
 
 export class TaskService {
   projectService: ProjectService;
@@ -382,16 +383,26 @@ export class TaskService {
   // Fetch my tasks
   async fetchMyTasks(
     userId: string,
-    deadline?: TaskFilter
+    deadline?: TaskFilter,
+    userRole?: Role
   ): Promise<{ tasks: ITaskDetail[]; total: number }> {
     if (deadline && !["today", "upcoming", "all"].includes(deadline)) {
       throw new ApiError("Invalid filter", 400);
     }
 
-    const tasksQuerySnap = await db
-      .collection(COLLECTIONS.TASKS)
-      .where("assignedTo", "array-contains", userId)
-      .get();
+    let tasksQuerySnap = null;
+
+    if (userRole === "teamLeader") {
+      tasksQuerySnap = await db
+        .collection(COLLECTIONS.TASKS)
+        .where("createdBy", "==", userId)
+        .get();
+    } else {
+      tasksQuerySnap = await db
+        .collection(COLLECTIONS.TASKS)
+        .where("assignedTo", "array-contains", userId)
+        .get();
+    }
 
     const today = dayjs();
 
@@ -417,10 +428,24 @@ export class TaskService {
           data.projectId
         );
 
+        const assignedTo: IProjectMembers[] = await Promise.all(
+          data.assignedTo.map(async (memId: string) => {
+            const member = (await AuthServices.getUserById(memId)) as IUser;
+            return {
+              id: member.uid,
+              name: `${member.profile.firstName} ${member.profile.lastName}`,
+              role: member.role,
+              email: member.profile.email,
+              avatar: member.profile.profilePicture as string,
+            };
+          })
+        );
+
         return {
           id: doc.id,
           ...data,
           projectName: projectDetail.name,
+          assignedTo,
         } as ITaskDetail;
       })
     );
