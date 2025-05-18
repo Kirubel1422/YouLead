@@ -46,4 +46,12 @@ router.put(
   authMiddlewares.validate,
   taskController.updateProgress
 );
+
+router.put(
+  "/update/:taskId",
+  authMiddlewares.validateTeamLeader,
+  validate(TaskSchema),
+  taskController.updateTask
+);
+
 export default router;

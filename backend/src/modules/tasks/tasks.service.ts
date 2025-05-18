@@ -19,10 +19,12 @@ import { ProjectService } from "../projects/projects.service";
 import { ActivityService } from "../activities/activities.service";
 import logger from "src/utils/logger/logger";
 import { AuthServices } from "../auth/auth.service";
+import { Helper } from "src/utils/helpers";
 
 export class TaskService {
   projectService: ProjectService;
   activityService: ActivityService;
+  helper: Helper;
 
   constructor() {
     this.createTask = this.createTask.bind(this);
@@ -33,9 +35,44 @@ export class TaskService {
     this.deleteTask = this.deleteTask.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
     this.updateProgress = this.updateProgress.bind(this);
+    this.updateTask = this.updateTask.bind(this);
 
+    this.helper = new Helper();
     this.activityService = new ActivityService();
     this.projectService = new ProjectService();
+  }
+
+  // Update a Task
+  async updateTask(
+    taskId: string,
+    taskData: TaskSchemaType,
+    userRole: Role,
+    userId: string
+  ): Promise<{ message: string }> {
+    if (!["teamLeader", "admin"].includes(userRole)) {
+      throw new ApiError("Unauthorized", 401);
+    }
+
+    const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
+    const taskSnap = await taskRef.get();
+
+    if (!taskSnap.exists) {
+      throw new ApiError("Task not found", 400);
+    }
+
+    // If teamLeader, check if the user is part of the task
+    if (userRole === "teamLeader") {
+      const taskData = taskSnap.data() as ITask;
+      if (taskData.createdBy != userId) {
+        throw new ApiError("Unauthorized", 401);
+      }
+    }
+    await taskRef.update({
+      ...taskData,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { message: "Task updated successfully" };
   }
 
   // Create Task
@@ -85,7 +122,12 @@ export class TaskService {
     data: TaskAddMembersSchemaType,
     taskId: string,
     createdBy: string
-  ): Promise<{ message: string }> {
+  ): Promise<{
+    message: string;
+    fullName: string;
+    email: string;
+    taskName: string;
+  }> {
     return await db.runTransaction(async (transaction) => {
       const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
       const taskSnap = await transaction.get(taskRef);
@@ -122,6 +164,7 @@ export class TaskService {
 
       // Process all members concurrently using Promise.all
       const names: string[] = []; // For activity log purpose
+      const emails: string[] = []; // For activity log purpose
       await Promise.all(
         data.assignedTo.map(async (memberId: string) => {
           const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
@@ -142,6 +185,7 @@ export class TaskService {
           // Add user name for activity log
           const fullName = `${userData.profile.firstName} ${userData.profile.lastName}`;
           names.push(fullName);
+          emails.push(userData.profile.email);
 
           // Increase the pending count for the user
           transaction.update(userRef, {
@@ -170,7 +214,12 @@ export class TaskService {
         projectId: taskData.projectId,
       });
 
-      return { message: "Successfully assigned Task!" };
+      return {
+        message: "Successfully assigned Task!",
+        fullName: names[0],
+        email: emails[0],
+        taskName: taskData.name,
+      };
     });
   }
 
@@ -178,7 +227,12 @@ export class TaskService {
   async unAssign(
     memberId: string,
     taskId: string
-  ): Promise<{ message: string }> {
+  ): Promise<{
+    message: string;
+    fullName: string;
+    taskName: string;
+    email: string;
+  }> {
     return await db.runTransaction(async (transaction) => {
       const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
       const taskRef = db.collection(COLLECTIONS.TASKS).doc(taskId);
@@ -226,7 +280,12 @@ export class TaskService {
         assignedTo: firestore.FieldValue.arrayRemove(memberId),
       });
 
-      return { message: "Unassigned user from the task" };
+      return {
+        message: "Unassigned user from the task",
+        fullName: this.helper.extractFullName(userData.profile),
+        taskName: taskData.name,
+        email: userData.profile.email,
+      };
     });
   }
 
@@ -339,7 +398,12 @@ export class TaskService {
       );
 
       // Finally mark as complete
-      transaction.update(taskRef, { status: "completed" });
+      transaction.update(taskRef, {
+        status: "completed",
+        progress: 100,
+        completedAt: new Date().toISOString(),
+        completedBy: authData.uid,
+      });
 
       // Write to activity logs
       await this.activityService.writeTaskActivity({

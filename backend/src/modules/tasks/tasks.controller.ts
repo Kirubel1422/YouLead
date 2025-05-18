@@ -2,6 +2,7 @@ import { ApiResp } from "src/utils/api/api.response";
 import { Request, Response, NextFunction } from "express";
 import { TaskService } from "./tasks.service";
 import { ITaskMetaData, TaskFilter } from "src/interfaces/task.interface";
+import { EmailService } from "../email/email.service";
 
 export class TaskController {
   private taskService: TaskService;
@@ -17,6 +18,22 @@ export class TaskController {
     this.unAssign = this.unAssign.bind(this);
     this.fetchMyTasks = this.fetchMyTasks.bind(this);
     this.updateProgress = this.updateProgress.bind(this);
+    this.updateTask = this.updateTask.bind(this);
+  }
+
+  // Update Task Controller
+  async updateTask(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { message } = await this.taskService.updateTask(
+        req.params.taskId,
+        req.body,
+        req.user.role,
+        req.user.uid
+      );
+      res.json(new ApiResp(message, 200, true, message));
+    } catch (error) {
+      next(error);
+    }
   }
 
   // Create Task Controller
@@ -35,12 +52,14 @@ export class TaskController {
   // Assign Task Controller
   async assignMembers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.taskService.assignTask(
-        req.body,
-        req.params.taskId,
-        req.user.uid
-      );
+      const { message, fullName, email, taskName } =
+        await this.taskService.assignTask(
+          req.body,
+          req.params.taskId,
+          req.user.uid
+        );
       res.json(new ApiResp(message, 200));
+      EmailService.taskAssign(email, taskName, fullName);
     } catch (error) {
       next(error);
     }
@@ -49,11 +68,13 @@ export class TaskController {
   // Remove or Unassign user from a task
   async unAssign(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.taskService.unAssign(
-        req.query.memberId as string,
-        req.params.taskId
-      );
+      const { message, fullName, taskName, email } =
+        await this.taskService.unAssign(
+          req.query.memberId as string,
+          req.params.taskId
+        );
       res.json(new ApiResp(message, 200));
+      EmailService.taskUnAssign(email, taskName, fullName);
     } catch (error) {
       next(error);
     }
