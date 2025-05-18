@@ -3,7 +3,7 @@ import z from "zod";
 export const ProjectSchema = z.object({
   name: z.string().nonempty("Project name is required"),
   description: z.string().optional(),
-  projectDeadline: z.string().date("Invalid date").optional(),
+  deadline: z.array(z.string()).optional(),
   teamId: z.string().nonempty(),
 });
 
