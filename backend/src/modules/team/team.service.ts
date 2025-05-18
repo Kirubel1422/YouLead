@@ -254,7 +254,6 @@ export class TeamService {
      },
    */
   async getAllMembers(teamId: string, uid: string): Promise<any[]> {
-    console.log(activeUsers);
     const membersSnap = await db
       .collection(COLLECTIONS.USERS)
       .where("teamId", "==", teamId)
@@ -277,6 +276,7 @@ export class TeamService {
             ? "online"
             : "offline",
         role: userData.role,
+        email: userData.profile.email,
       };
     });
 
