@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
      Mail,
      Phone,
@@ -47,6 +47,12 @@ import Layout from "@/components/sidebar/layout";
 import { getInitials, getRoleLabel } from "@/utils/basic";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/rootReducer";
+import { useForm } from "react-hook-form";
+import { ChangePasswordSchema, ChangePasswordSchemaType } from "@/schemas/auth.schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useChangePasswordMutation } from "@/api/auth.api";
+import { useToast } from "@/components/Toast";
+import { Loadable } from "@/components/state";
 
 interface IProfile {
      firstName: string;
@@ -74,16 +80,23 @@ export default function Profile() {
      const { user } = useSelector((state: RootState) => state.base.auth);
 
      const [isEditingProfile, setIsEditingProfile] = useState(false);
-     const [editedProfile, setEditedProfile] = useState<IProfile>(user);
+     const [editedProfile, setEditedProfile] = useState<IProfile>(user.profile);
+     const [twoOpen , setTwoOpen] = useState<boolean>(false);
 
      // Password change state
-     const [currentPassword, setCurrentPassword] = useState("");
-     const [newPassword, setNewPassword] = useState("");
      const [confirmPassword, setConfirmPassword] = useState("");
      const [showCurrentPassword, setShowCurrentPassword] = useState(false);
      const [showNewPassword, setShowNewPassword] = useState(false);
      const [showConfirmPassword, setShowConfirmPassword] = useState(false);
      const [passwordError, setPasswordError] = useState<string | null>(null);
+
+     const { showToast } = useToast();
+
+     useEffect(() => {
+          if (user.profile) {
+               setValue("email", user.profile.email);
+          }
+     }, []);
 
      const formatDate = (dateString: string) => {
           const date = new Date(dateString);
@@ -104,52 +117,36 @@ export default function Profile() {
           }));
      };
 
-     const handleCancelEdit = () => {
-          setEditedProfile(user.profile);
-          setIsEditingProfile(false);
-     };
+     // const handleCancelEdit = () => {
+     //      setEditedProfile(user.profile);
+     //      setIsEditingProfile(false);
+     // };
 
-     const handlePasswordChange = () => {
-          // Reset error
-          setPasswordError(null);
+     // Handle Change Password
+     const [changePassword, { isLoading: changing }] = useChangePasswordMutation();
+     const {
+          register,
+          handleSubmit,
+          formState: { errors },
+          getValues,
+          setValue,
+          reset,
+     } = useForm<ChangePasswordSchemaType>({
+          resolver: zodResolver(ChangePasswordSchema),
+     });
 
-          // Validate passwords
-          if (!currentPassword) {
-               setPasswordError("Current password is required");
-               return;
+     const handlePasswordChange = async (data: ChangePasswordSchemaType) => {
+          if (confirmPassword != getValues("newPassword")) {
+               return showToast("Password's mismatch!", "warning");
           }
 
-          if (!newPassword) {
-               setPasswordError("New password is required");
-               return;
+          try {
+               await changePassword(data).unwrap();
+               showToast("Changed Password Successfully!", "success");
+               reset();
+          } catch (error: any) {
+               showToast(error?.data?.message || "Failed to change password.", "error");
           }
-
-          if (newPassword.length < 8) {
-               setPasswordError("Password must be at least 8 characters");
-               return;
-          }
-
-          if (newPassword !== confirmPassword) {
-               setPasswordError("Passwords do not match");
-               return;
-          }
-
-          // Check if new password is one of the previous passwords
-          if (user.previousPasswords?.includes(newPassword)) {
-               setPasswordError("Cannot reuse a previous password");
-               return;
-          }
-
-          // Update password (in a real app, this would call an API)
-          // const updatedPreviousPasswords = [...(user.previousPasswords || []), currentPassword];
-
-          // Reset form
-          setCurrentPassword("");
-          setNewPassword("");
-          setConfirmPassword("");
-
-          // Show success message (in a real app, you'd use a toast)
-          alert("Password changed successfully");
      };
 
      const calculateTaskCompletion = () => {
@@ -161,8 +158,8 @@ export default function Profile() {
 
      const calculateProjectCompletion = () => {
           if (!user.projectStatus) return 0;
-          const { completed, inProgress, notStarted } = user.projectStatus;
-          const total = completed + inProgress + notStarted;
+          const { completed, pastDue, pending } = user.projectStatus;
+          const total = completed + pastDue + pending;
           return total > 0 ? Math.round((completed / total) * 100) : 0;
      };
 
@@ -247,7 +244,7 @@ export default function Profile() {
                                         <CardTitle>Profile Information</CardTitle>
                                         <CardDescription>Manage your personal information</CardDescription>
                                    </div>
-                                   {!isEditingProfile ? (
+                                   {/* {!isEditingProfile ? (
                                         <Button variant="outline" size="sm" onClick={() => setIsEditingProfile(true)}>
                                              <Edit className="h-4 w-4 mr-2" />
                                              Edit Profile
@@ -263,7 +260,7 @@ export default function Profile() {
                                                   Save
                                              </Button>
                                         </div>
-                                   )}
+                                   )} */}
                               </CardHeader>
                               <CardContent>
                                    {isEditingProfile ? (
@@ -342,7 +339,7 @@ export default function Profile() {
                               </CardContent>
                          </Card>
 
-                         {user.teamId && (
+                         {/* {user.teamId && (
                               <Card className="mt-4">
                                    <CardHeader>
                                         <CardTitle>Team Information</CardTitle>
@@ -393,7 +390,7 @@ export default function Profile() {
                                         </Button>
                                    </CardFooter>
                               </Card>
-                         )}
+                         )} */}
                     </TabsContent>
 
                     {/* Account Tab */}
@@ -479,7 +476,7 @@ export default function Profile() {
                                                             <CheckCircle className="h-5 w-5 text-green-500" />
                                                        </div>
                                                        <p className="text-xl font-bold text-green-700">
-                                                            {user.taskStatus.completed}
+                                                            {user.taskStatus.completed || 0}
                                                        </p>
                                                        <p className="text-xs text-green-600">Completed</p>
                                                   </div>
@@ -489,7 +486,7 @@ export default function Profile() {
                                                             <Clock className="h-5 w-5 text-blue-500" />
                                                        </div>
                                                        <p className="text-xl font-bold text-blue-700">
-                                                            {user.taskStatus.pending}
+                                                            {user.taskStatus.pending || 0}
                                                        </p>
                                                        <p className="text-xs text-blue-600">Pending</p>
                                                   </div>
@@ -499,7 +496,7 @@ export default function Profile() {
                                                             <AlertTriangle className="h-5 w-5 text-red-500" />
                                                        </div>
                                                        <p className="text-xl font-bold text-red-700">
-                                                            {user.taskStatus.pastDue}
+                                                            {user.taskStatus.pastDue || 0}
                                                        </p>
                                                        <p className="text-xs text-red-600">Past Due</p>
                                                   </div>
@@ -509,11 +506,11 @@ export default function Profile() {
                                                   Last updated: {formatDate(user.taskStatus.updatedAt)}
                                              </div>
                                         </CardContent>
-                                        <CardFooter>
+                                        {/* <CardFooter>
                                              <Button variant="outline" className="w-full">
                                                   View All Tasks
                                              </Button>
-                                        </CardFooter>
+                                        </CardFooter> */}
                                    </Card>
                               )}
 
@@ -541,7 +538,7 @@ export default function Profile() {
                                                             <CheckCircle className="h-5 w-5 text-green-500" />
                                                        </div>
                                                        <p className="text-xl font-bold text-green-700">
-                                                            {user.projectStatus.completed}
+                                                            {user.projectStatus.completed || 0}
                                                        </p>
                                                        <p className="text-xs text-green-600">Completed</p>
                                                   </div>
@@ -551,19 +548,19 @@ export default function Profile() {
                                                             <Clock className="h-5 w-5 text-blue-500" />
                                                        </div>
                                                        <p className="text-xl font-bold text-blue-700">
-                                                            {user.projectStatus.inProgress}
+                                                            {user.projectStatus.pending || 0}
                                                        </p>
-                                                       <p className="text-xs text-blue-600">In Progress</p>
+                                                       <p className="text-xs text-blue-600">Pending</p>
                                                   </div>
 
                                                   <div className="bg-gray-50 rounded-lg p-3 text-center">
                                                        <div className="flex justify-center mb-1">
-                                                            <Clock className="h-5 w-5 text-gray-500" />
+                                                            <AlertTriangle className="h-5 w-5 text-red-500" />
                                                        </div>
-                                                       <p className="text-xl font-bold text-gray-700">
-                                                            {user.projectStatus.notStarted}
+                                                       <p className="text-xl font-bold text-red-700">
+                                                            {user.projectStatus.pastDue || 0}
                                                        </p>
-                                                       <p className="text-xs text-gray-600">Not Started</p>
+                                                       <p className="text-xs text-red-600">Past Due</p>
                                                   </div>
                                              </div>
 
@@ -571,11 +568,11 @@ export default function Profile() {
                                                   Last updated: {formatDate(user.projectStatus.updatedAt)}
                                              </div>
                                         </CardContent>
-                                        <CardFooter>
+                                        {/* <CardFooter>
                                              <Button variant="outline" className="w-full">
                                                   View All Projects
                                              </Button>
-                                        </CardFooter>
+                                        </CardFooter> */}
                                    </Card>
                               )}
                          </div>
@@ -589,18 +586,23 @@ export default function Profile() {
                                    <CardDescription>Manage your password and security preferences</CardDescription>
                               </CardHeader>
                               <CardContent className="space-y-6">
-                                   <div>
+                                   <form onSubmit={handleSubmit(handlePasswordChange)}>
                                         <h3 className="text-base font-medium mb-2">Change Password</h3>
                                         <div className="space-y-4">
                                              <div className="space-y-2">
-                                                  <Label htmlFor="currentPassword">Current Password</Label>
+                                                  <Label htmlFor="oldPassword">Current Password</Label>
                                                   <div className="relative">
                                                        <Input
-                                                            id="currentPassword"
+                                                            error={!!errors.oldPassword?.message}
+                                                            id="oldPassword"
                                                             type={showCurrentPassword ? "text" : "password"}
-                                                            value={currentPassword}
-                                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                                            {...register("oldPassword")}
                                                        />
+                                                       {errors.oldPassword?.message && (
+                                                            <p className="text-sm text-red-500">
+                                                                 {errors.oldPassword.message}
+                                                            </p>
+                                                       )}
                                                        <button
                                                             type="button"
                                                             className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
@@ -621,9 +623,14 @@ export default function Profile() {
                                                        <Input
                                                             id="newPassword"
                                                             type={showNewPassword ? "text" : "password"}
-                                                            value={newPassword}
-                                                            onChange={(e) => setNewPassword(e.target.value)}
+                                                            {...register("newPassword")}
+                                                            error={!!errors.newPassword?.message}
                                                        />
+                                                       {errors.newPassword?.message && (
+                                                            <p className="text-sm text-red-500">
+                                                                 {errors.newPassword.message}
+                                                            </p>
+                                                       )}
                                                        <button
                                                             type="button"
                                                             className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
@@ -665,12 +672,12 @@ export default function Profile() {
                                                   <div className="text-sm text-red-500">{passwordError}</div>
                                              )}
 
-                                             <Button onClick={handlePasswordChange}>
+                                             <Button variant={"primary"} type="submit">
                                                   <Lock className="h-4 w-4 mr-2" />
-                                                  Change Password
+                                                  <Loadable isLoading={changing}>Change Password</Loadable>
                                              </Button>
                                         </div>
-                                   </div>
+                                   </form>
 
                                    <Separator />
 
@@ -684,10 +691,8 @@ export default function Profile() {
                                                             Add an extra layer of security to your account
                                                        </p>
                                                   </div>
-                                                  <Dialog>
-                                                       <DialogTrigger asChild>
-                                                            <Button variant="outline">Setup</Button>
-                                                       </DialogTrigger>
+                                                            <Button onClick={() => setTwoOpen(true)} variant="outline">Setup</Button>
+                                                  <Dialog open={twoOpen} onOpenChange={setTwoOpen}>
                                                        <DialogContent>
                                                             <DialogHeader>
                                                                  <DialogTitle>Two-Factor Authentication</DialogTitle>
@@ -702,14 +707,14 @@ export default function Profile() {
                                                                  </p>
                                                             </div>
                                                             <DialogFooter>
-                                                                 <Button variant="outline">Cancel</Button>
-                                                                 <Button>Continue</Button>
+                                                                 <Button onClick={() => setTwoOpen(false)} variant="outline">Cancel</Button>
+                                                                 <Button onClick={() => setTwoOpen(false)} variant={"primary"}>Continue</Button>
                                                             </DialogFooter>
                                                        </DialogContent>
                                                   </Dialog>
                                              </div>
 
-                                             <div className="flex items-center justify-between">
+                                             {/* <div className="flex items-center justify-between">
                                                   <div>
                                                        <p className="font-medium">Session Management</p>
                                                        <p className="text-sm text-gray-500">
@@ -727,7 +732,7 @@ export default function Profile() {
                                                             </DropdownMenuItem>
                                                        </DropdownMenuContent>
                                                   </DropdownMenu>
-                                             </div>
+                                             </div> */}
 
                                              <div className="flex items-center justify-between">
                                                   <div>

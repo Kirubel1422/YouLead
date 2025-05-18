@@ -154,7 +154,12 @@ export default function OnboardingTeamMember() {
                                                        }}
                                                        className={joinError ? "border-red-500" : ""}
                                                   />
-                                                  <Button disabled={joining} className="ml-2" onClick={handleJoinTeam}>
+                                                  <Button
+                                                       variant={"primary"}
+                                                       disabled={joining}
+                                                       className="ml-2"
+                                                       onClick={handleJoinTeam}
+                                                  >
                                                        <Loadable isLoading={joining}>Join</Loadable>
                                                   </Button>
                                              </div>
@@ -294,7 +299,7 @@ export default function OnboardingTeamMember() {
                                         <div>
                                              <h4 className="text-sm font-medium">View Documentation</h4>
                                              <p className="text-xs text-gray-500">
-                                                  Learn how to use TeamPulse and all its features
+                                                  Learn how to use YouLead and all its features
                                              </p>
                                              <Button variant="link" size="sm" className="px-0 h-auto text-xs">
                                                   Read Docs <ArrowRight className="h-3 w-3 ml-1" />

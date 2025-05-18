@@ -15,10 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import {
      formatDate,
      getDaysRemaining,
-     getInitials,
      getPriorityColor,
      getStatusColor,
      isOverdue,
+     statusLabel,
      take,
 } from "@/utils/basic";
 import { useMyTasksQuery } from "@/api/tasks.api";
@@ -36,8 +36,10 @@ import { useRecentActivititesQuery } from "@/api/activities.api";
 import { IActivity } from "@/types/activity.type";
 import { CalendarModal } from "@/components/modal/calendar/Calendar";
 import TaskDetail from "@/components/modal/task/TaskDetail";
-import { socket } from "@/services/socket";
-import { ITeamMember } from "@/types/team.types";
+import { useNavigate } from "react-router";
+import MeetingFallback from "@/components/fallbacks/meeting/meeting";
+import ActivityFallBack from "@/components/fallbacks/activity/activity";
+// import { socket } from "@/services/socket";
 
 export default function TeamMemberDashboard() {
      const { user } = useSelector((state: RootState) => state.base.auth);
@@ -47,29 +49,14 @@ export default function TeamMemberDashboard() {
      const [taskDetailOpen, setTaskDetailOpen] = useState<boolean>(false);
      const [targetTask, setTargetTask] = useState<ITaskDetail | undefined>();
 
-     // Initialize socket
+     const navigate = useNavigate();
      useEffect(() => {
-          socket.connect();
-     }, []);
+          if (user.role == "teamLeader") {
+               navigate("/dashboard/leader");
+               return;
+          }
 
-     useEffect(() => {
-          // Setup socket
-          socket.emit("setup", user.uid);
-
-          // Open to Receive
-          socket.on("receive", (msgData) => console.log(msgData));
-
-          // When online
-          const handleActive = () => {
-               socket.emit("online", user.uid);
-          };
-
-          // When offline
-          const handleBlur = () => {
-               socket.emit("offline", user.uid);
-          };
-
-          handleActive();
+          if (!user.teamId) navigate("/dashboard/onboarding");
      }, []);
 
      // Fetch my tasks
@@ -81,10 +68,10 @@ export default function TeamMemberDashboard() {
      const { data: analytics, isFetching: fetchingAnalytics } = useGetMainQuery();
 
      // Fetch my upcoming tasks
-     const { data: upcomingMeetings, isFetching: fetchingUpcomings } = useUpcomingMeetingsQuery();
+     const { data: upcomingMeetings } = useUpcomingMeetingsQuery();
 
      // Fetch recent activities - relies on team
-     const { data: recentActivities, isFetching: fetchingRecentActivities } = useRecentActivititesQuery(user.teamId);
+     const { data: recentActivities } = useRecentActivititesQuery(user.teamId);
 
      const duration = (start: string, end: string): string => {
           const later = new Date(end);
@@ -288,6 +275,7 @@ export default function TeamMemberDashboard() {
                                         <CardTitle className="text-lg">Upcoming Meetings</CardTitle>
                                    </CardHeader>
                                    <CardContent>
+                                        {upcomingMeetings && upcomingMeetings.length == 0 && <MeetingFallback />}
                                         {upcomingMeetings &&
                                              upcomingMeetings.map((meeting: IMeeting) => (
                                                   <div
@@ -325,6 +313,10 @@ export default function TeamMemberDashboard() {
                                         <CardTitle className="text-lg">Recent Activity</CardTitle>
                                    </CardHeader>
                                    <CardContent className="max-h-[320px] overflow-y-auto">
+                                        {Array.isArray(recentActivities) && recentActivities.length === 0 && (
+                                             <ActivityFallBack />
+                                        )}
+
                                         {recentActivities &&
                                              take(recentActivities, 5).map((activity: IActivity) => (
                                                   <div key={activity.id} className="flex items-start py-3 first:pt-0">
@@ -372,7 +364,7 @@ const TaskCard = ({ task, formatDate, isOverdue, setTaskDetailOpen, setTargetTas
                          <div className="flex-1 min-w-0">
                               <div className="flex items-center mb-1">
                                    <h3 className="text-sm font-medium truncate mr-2">{task.name}</h3>
-                                   <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
+                                   <Badge className={getStatusColor(task.status)}>{statusLabel(task.status)}</Badge>
                                    <Badge className={`ml-2 ${getPriorityColor(task.priority)}`}>{task.priority}</Badge>
                               </div>
 

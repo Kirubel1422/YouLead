@@ -38,12 +38,6 @@ export default function Calendar() {
                <main className="flex-1 p-8 pt-6">
                     <div className="flex items-center justify-between mb-6">
                          <h2 className="text-3xl font-bold tracking-tight">Calendar</h2>
-                         <div hidden={user.role == "teamMember"} className="flex items-center space-x-2">
-                              <Button>
-                                   <Plus className="mr-2 h-4 w-4" />
-                                   Add Event
-                              </Button>
-                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6">
