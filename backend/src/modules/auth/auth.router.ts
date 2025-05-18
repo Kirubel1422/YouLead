@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { SigninSchema, SignupSchema } from "src/validators/auth.validator";
+import {
+  ChangePasswordSchema,
+  SigninSchema,
+  SignupSchema,
+} from "src/validators/auth.validator";
 import validate from "src/validators/validate";
 import { AuthController } from "./auth.controller";
 import { authMiddlewares } from "./auth.middleware";
@@ -7,6 +11,11 @@ import { authMiddlewares } from "./auth.middleware";
 const router = Router();
 const authController = new AuthController();
 
+router.put(
+  "/change-password",
+  validate(ChangePasswordSchema),
+  authController.changePassword
+);
 router.post("/signup", validate(SignupSchema), authController.userSignup);
 router.post("/signin", validate(SigninSchema), authController.userSignin);
 router.delete(

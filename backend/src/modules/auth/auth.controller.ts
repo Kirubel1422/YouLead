@@ -14,6 +14,7 @@ export class AuthController {
     this.userSignup = this.userSignup.bind(this);
     this.userSignin = this.userSignin.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
+    this.changePassword = this.changePassword.bind(this);
     this.me = this.me.bind(this);
   }
 
@@ -81,6 +82,15 @@ export class AuthController {
         .json(
           new ApiResp("Successfully fetched user data.", 200, true, userData)
         );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { message } = await this.authService.changePassword(req.body);
+      res.status(200).json(new ApiResp(message, 200, true));
     } catch (error) {
       next(error);
     }

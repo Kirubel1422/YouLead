@@ -10,6 +10,7 @@ import { ActivityService } from "../activities/activities.service";
 import { IChatUser } from "src/interfaces/message.interface";
 import { Helper } from "src/utils/helpers";
 import { activeUsers } from "src/services/socket";
+import logger from "src/utils/logger/logger";
 
 export class AuthServices {
   private activityService: ActivityService;
@@ -22,6 +23,7 @@ export class AuthServices {
     this.login = this.login.bind(this);
     this.userSignup = this.userSignup.bind(this);
     this.deleteUser = this.deleteUser.bind(this);
+    this.changePassword = this.changePassword.bind(this);
     this.me = this.me.bind(this);
 
     this.getUserByEmail = this.getUserByEmail.bind(this);
@@ -269,5 +271,42 @@ export class AuthServices {
     }
 
     return { ...userData };
+  }
+
+  async changePassword(data: {
+    oldPassword: string;
+    newPassword: string;
+    email: string;
+  }): Promise<{ message: string }> {
+    try {
+      // Sigin
+      const response = await axiosInstance.post(
+        `:signInWithPassword?key=${ENV.FIREBASE_API_KEY}`,
+        {
+          email: data.email,
+          password: data.oldPassword,
+          returnSecureToken: true,
+        }
+      );
+
+      // Extract token
+      const { localId } = response.data;
+
+      // Fetch user data from firestore
+      const userDoc = await db.collection(COLLECTIONS.USERS).doc(localId).get();
+
+      if (!userDoc.exists) {
+        throw new ApiError("User not found", 400, false);
+      }
+
+      // Now Change Password
+      await auth.updateUser(localId, {
+        password: data.newPassword,
+      });
+      return { message: "Password changed successfully!" };
+    } catch (error: any) {
+      logger.error(error.message);
+      throw new ApiError("Old password is incorrect", 400, false);
+    }
   }
 }
