@@ -10,7 +10,7 @@ import {
      SidebarMenuButton,
      SidebarMenuItem,
 } from "../ui/sidebar";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logout, setUserTeamState } from "@/store/auth/authSlice";
 import { onBoardingSidebar, OnboardingSidebarItem, sidebar, SidebarItem } from "@/constants/data";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
@@ -27,6 +27,7 @@ import { Skeleton } from "../ui/skeleton";
 import Join from "../modal/team/Join";
 import { useJoinTeamMutation } from "@/api/team.api";
 import { saveProjects } from "@/store/projects/projectsSlice";
+import ProjectDetail from "../modal/project/ProjectDetail";
 
 export default function AppSidebar() {
      const location = useLocation();
@@ -42,6 +43,8 @@ export default function AppSidebar() {
      }
 
      const [joinOpen, setJoinOpen] = useState<boolean>(false);
+     const [proDetail, setProDetail] = useState<boolean>(false);
+     const [selectedPro, setSelectedPro] = useState<IProject | undefined>(undefined);
 
      // Query my projects
      const {
@@ -51,7 +54,6 @@ export default function AppSidebar() {
      } = useFetchMyProjectsQuery(
           {
                page: 1,
-               limit: 3,
                teamId: user?.teamId || "",
           },
           {
@@ -70,14 +72,16 @@ export default function AppSidebar() {
      const [join, { isLoading: joining }] = useJoinTeamMutation();
 
      // Handle Join Team Mutation
+     const navigate = useNavigate();
      const handleJoinTeamMutation = async (teamId: string) => {
           try {
                const resp = await join({ teamId }).unwrap();
                showToast(resp.message, "success");
                setJoinOpen(false);
                dispatch(setUserTeamState({ hasTeam: true }));
+               navigate("/dashboard");
           } catch (error: any) {
-               showToast(error.data.message || "Something went wrong!", "error");
+               showToast(error?.data?.message || "Something went wrong!", "error");
           }
      };
 
@@ -107,13 +111,24 @@ export default function AppSidebar() {
                                                return (
                                                     <SidebarMenuItem>
                                                          <SidebarMenuButton
-                                                              isActive={location.pathname == sidebarItem.to}
+                                                              isActive={
+                                                                   location.pathname ==
+                                                                   (user.role == "teamLeader"
+                                                                        ? sidebarItem.to[sidebarItem.to.length - 1]
+                                                                        : sidebarItem.to[0])
+                                                              }
                                                               asChild
                                                               onClick={
                                                                    sidebarItem.onClick ? sidebarItem.onClick : undefined
                                                               }
                                                          >
-                                                              <Link to={sidebarItem.to}>
+                                                              <Link
+                                                                   to={
+                                                                        (user.role == "teamLeader"
+                                                                             ? sidebarItem.to[sidebarItem.to.length - 1]
+                                                                             : sidebarItem.to[0]) as string
+                                                                   }
+                                                              >
                                                                    <sidebarItem.icon className="mr-3 h-5 w-5" />
                                                                    <span className="text-xs">
                                                                         {["tasks", "projects"].some(
@@ -165,16 +180,18 @@ export default function AppSidebar() {
                                                ))
                                              : take(
                                                     Array.isArray(myProjects?.projects) ? myProjects?.projects : [],
-                                                    3,
+                                                    1000,
                                                ).map((project: IProject) => (
                                                     <SidebarMenuItem>
                                                          <SidebarMenuButton
-                                                              isActive={
-                                                                   location.pathname ==
-                                                                   "/dashboard/projects/" + project.id
-                                                              }
                                                               key={project.id}
                                                               className="w-full justify-start font-normal text-xs"
+                                                              onClick={(event) => {
+                                                                   event.preventDefault();
+
+                                                                   setSelectedPro(project);
+                                                                   setProDetail(true);
+                                                              }}
                                                               asChild
                                                          >
                                                               <Link to={"/dashboard/projects/" + project.id}>
@@ -194,7 +211,12 @@ export default function AppSidebar() {
                                    <p className="text-xs text-gray-600 mb-3">
                                         Join a team to start collaborating on projects and tasks.
                                    </p>
-                                   <Button onClick={() => setJoinOpen(true)} size="sm" className="w-full">
+                                   <Button
+                                        variant={"primary"}
+                                        onClick={() => setJoinOpen(true)}
+                                        size="sm"
+                                        className="w-full"
+                                   >
                                         <UserPlus className="mr-2 h-4 w-4" />
                                         Join Now
                                    </Button>
@@ -228,6 +250,8 @@ export default function AppSidebar() {
                {joinOpen && (
                     <Join loading={joining} open={joinOpen} setOpen={setJoinOpen} onJoin={handleJoinTeamMutation} />
                )}
+
+               {proDetail && <ProjectDetail open={proDetail} setOpen={setProDetail} selectedProject={selectedPro} />}
           </Sidebar>
      );
 }

@@ -19,9 +19,7 @@ const Join = ({ open, setOpen, onJoin, loading }: JoinProps) => {
           <Dialog open={open} onOpenChange={setOpen}>
                <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
-                         <DialogTitle>
-                              <span>+ Join Team</span>
-                         </DialogTitle>
+                         <DialogTitle>Join Team</DialogTitle>
                     </DialogHeader>
                     <Label htmlFor="teamId" className="text-sm font-medium text-gray-900 dark:text-gray-300">
                          Team ID
@@ -34,9 +32,13 @@ const Join = ({ open, setOpen, onJoin, loading }: JoinProps) => {
                     />
 
                     <DialogFooter>
-                         <Button variant={"outline"}>Close</Button>
+                         <Button variant={"outline"} onClick={() => setOpen(false)}>
+                              Close
+                         </Button>
                          <Loadable isLoading={loading}>
-                              <Button onClick={() => onJoin(teamId)}>Join</Button>
+                              <Button variant={"primary"} onClick={() => onJoin(teamId)}>
+                                   Join
+                              </Button>
                          </Loadable>
                     </DialogFooter>
                </DialogContent>

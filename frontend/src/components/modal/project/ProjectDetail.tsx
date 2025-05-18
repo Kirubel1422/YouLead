@@ -74,7 +74,9 @@ const Member = ({ open, user, setOpen, selectedProject, showToast }: MemberDetai
                               <DialogDescription>
                                    Project: {selectedProject.name} • Due{" "}
                                    {formatDate(
-                                        Array.isArray(selectedProject.deadline) ? selectedProject.deadline[0] : "-",
+                                        Array.isArray(selectedProject.deadline) && selectedProject.deadline.length > 0
+                                             ? selectedProject.deadline[selectedProject.deadline.length - 1]
+                                             : "",
                                    )}
                               </DialogDescription>
                          </DialogHeader>
@@ -87,13 +89,10 @@ const Member = ({ open, user, setOpen, selectedProject, showToast }: MemberDetai
                               </div>
                          </div>
 
-                         <DialogFooter className="flex gap-2 sm:justify-between">
+                         <DialogFooter className="flex gap-2 justify-end">
                               <div className="flex items-center gap-2">
                                    <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                                         Close
-                                   </Button>
-                                   <Button hidden={user.role === "teamMember"} variant="outline" size="sm">
-                                        Edit Project
                                    </Button>
                               </div>
                               {selectedProject.status !== "completed" && (

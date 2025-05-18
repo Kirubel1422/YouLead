@@ -130,7 +130,7 @@ export function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
 
                     {generatingErr && <p className="text-red-500 text-sm">{generatingErr}</p>}
 
-                    <Button onClick={generatePrioritization}>
+                    <Button variant={"primary"} onClick={generatePrioritization}>
                          <Loadable isLoading={generating}>AI Task Prioritization </Loadable>
                     </Button>
                </DialogContent>

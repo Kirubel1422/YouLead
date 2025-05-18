@@ -90,7 +90,11 @@ export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailPr
                               </DialogTitle>
                               <DialogDescription>
                                    Project: {selectedTask.projectName} • Due{" "}
-                                   {formatDate(Array.isArray(selectedTask.deadline) ? selectedTask.deadline[0] : "-")}
+                                   {formatDate(
+                                        Array.isArray(selectedTask.deadline) && selectedTask.deadline.length > 0
+                                             ? selectedTask.deadline[0]
+                                             : "-",
+                                   )}
                               </DialogDescription>
                          </DialogHeader>
 
@@ -143,9 +147,6 @@ export default function TaskDetail({ open, setOpen, selectedTask }: TaskDetailPr
                               <div className="flex items-center gap-2">
                                    <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
                                         Close
-                                   </Button>
-                                   <Button hidden={user.role === "teamMember"} variant="outline" size="sm">
-                                        Edit Task
                                    </Button>
                               </div>
                               {selectedTask.status !== "completed" && (
