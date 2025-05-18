@@ -34,6 +34,40 @@ export class ProjectService {
     this.deleteProject = this.deleteProject.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
     this.fetchProjectMembers = this.fetchProjectMembers.bind(this);
+    this.updateProject = this.updateProject.bind(this);
+  }
+
+  // Update Project
+  async updateProject(
+    projectId: string,
+    projectData: ProjectSchemaType,
+    userRole: Role,
+    userId: string
+  ): Promise<{ message: string }> {
+    if (!["teamLeader", "admin"].includes(userRole)) {
+      throw new ApiError("Unauthorized", 401);
+    }
+
+    const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
+    const projectSnap = await projectRef.get();
+
+    if (!projectSnap.exists) {
+      throw new ApiError("Project not found", 400);
+    }
+
+    // If teamLeader, check if the user is part of the task
+    if (userRole === "teamLeader") {
+      const projectData = projectSnap.data() as IProject;
+      if (projectData.createdBy != userId) {
+        throw new ApiError("Unauthorized", 401);
+      }
+    }
+    await projectRef.update({
+      ...projectData,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return { message: "Project updated successfully" };
   }
 
   // Fetch project members
@@ -119,7 +153,12 @@ export class ProjectService {
     data: ProjectAddMembersSchemaType,
     projectId: string,
     userId: string
-  ): Promise<{ message: string }> {
+  ): Promise<{
+    message: string;
+    fullName: string;
+    email: string;
+    projectName: string;
+  }> {
     return await db.runTransaction(async (transaction) => {
       const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
       const projectSnap = await transaction.get(projectRef);
@@ -132,6 +171,7 @@ export class ProjectService {
 
       // Process all members concurrently using Promise.all
       const names: string[] = [];
+      const emails: string[] = [];
       await Promise.all(
         data.members.map(async (memberId: string) => {
           const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
@@ -152,6 +192,7 @@ export class ProjectService {
           // Append full names to `names` array
           const fullName = this.helper.extractFullName(userData.profile);
           names.push(fullName);
+          emails.push(userData.profile.email);
 
           transaction.update(userRef, {
             projectStatus: {
@@ -177,7 +218,12 @@ export class ProjectService {
         members: firestore.FieldValue.arrayUnion(...data.members),
       });
 
-      return { message: "Successfully added users to project!" };
+      return {
+        message: "Successfully added users to project!",
+        fullName: names[0],
+        email: emails[0],
+        projectName: projectData.name,
+      };
     });
   }
 
@@ -185,7 +231,12 @@ export class ProjectService {
   async removeMember(
     memberId: string,
     projectId: string
-  ): Promise<{ message: string }> {
+  ): Promise<{
+    message: string;
+    fullName: string;
+    projectName: string;
+    email: string;
+  }> {
     return await db.runTransaction(async (transaction) => {
       const userRef = db.collection(COLLECTIONS.USERS).doc(memberId);
       const projectRef = db.collection(COLLECTIONS.PROJECTS).doc(projectId);
@@ -226,7 +277,12 @@ export class ProjectService {
         members: firestore.FieldValue.arrayRemove(memberId),
       });
 
-      return { message: "Member removed successfully" };
+      return {
+        message: "Member removed successfully",
+        fullName: this.helper.extractFullName(userData.profile),
+        projectName: projectData.name,
+        email: userData.profile.email,
+      };
     });
   }
 
@@ -334,7 +390,11 @@ export class ProjectService {
         type: "complete",
       });
 
-      transaction.update(projectRef, { status: "completed" });
+      transaction.update(projectRef, {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+        completedBy: authData.uid,
+      });
 
       return { message: "Congratulations for completing the project!" };
     });
@@ -403,6 +463,7 @@ export class ProjectService {
         id: doc.id,
         ...doc.data(),
       })) as Partial<IProject>[];
+      logger.debug("Leader projects fetched successfully");
       return { total, projects };
     }
 

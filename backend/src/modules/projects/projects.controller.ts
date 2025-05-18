@@ -1,6 +1,7 @@
 import { ApiResp } from "src/utils/api/api.response";
 import { ProjectService } from "./projects.service";
 import { Request, Response, NextFunction } from "express";
+import { EmailService } from "../email/email.service";
 
 export class ProjectController {
   private projectService: ProjectService;
@@ -16,6 +17,22 @@ export class ProjectController {
     this.my = this.my.bind(this);
     this.getProjectMembers = this.getProjectMembers.bind(this);
     this.getMyProjects = this.getMyProjects.bind(this);
+    this.updateProject = this.updateProject.bind(this);
+  }
+
+  // Update project controller
+  async updateProject(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { message } = await this.projectService.updateProject(
+        req.params.projectId,
+        req.body,
+        req.user.role,
+        req.user.uid
+      );
+      res.json(new ApiResp(message, 200, true, message));
+    } catch (error) {
+      next(error);
+    }
   }
 
   // Get project members controller
@@ -47,12 +64,14 @@ export class ProjectController {
   // Add Members Controller
   async addMembers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.projectService.addMembers(
-        req.body,
-        req.params.projectId,
-        req.user.uid
-      );
+      const { message, email, fullName, projectName } =
+        await this.projectService.addMembers(
+          req.body,
+          req.params.projectId,
+          req.user.uid
+        );
       res.json(new ApiResp(message, 200));
+      EmailService.projectAssign(email, projectName, fullName);
     } catch (error) {
       next(error);
     }
@@ -61,11 +80,13 @@ export class ProjectController {
   // Remove Member from Project Controller
   async removeMember(req: Request, res: Response, next: NextFunction) {
     try {
-      const { message } = await this.projectService.removeMember(
-        req.query.memberId as string,
-        req.params.projectId
-      );
+      const { message, email, fullName, projectName } =
+        await this.projectService.removeMember(
+          req.query.memberId as string,
+          req.params.projectId
+        );
       res.json(new ApiResp(message, 200));
+      EmailService.projectUnAssign(email, projectName, fullName);
     } catch (error) {
       next(error);
     }
