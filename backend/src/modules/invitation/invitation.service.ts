@@ -55,7 +55,7 @@ export class InvitationService {
       // If the user has already been invited, throw an error
       if (!invitationSnapShot.empty) {
         throw new ApiError(
-          `User with email ${invitationData.inviteeEmail} has already been invited to team ${invitationData.teamId}.`,
+          `User with email ${invitationData.inviteeEmail} has already been invited to team your team.`,
           400
         );
       }
@@ -72,13 +72,19 @@ export class InvitationService {
       const invitationRef = db.collection(COLLECTIONS.INVITATIONS).doc();
 
       // Generate Activity Log
-      const { uid } = await this.authService.getUserByEmail(
-        invitationData.inviteeEmail
-      );
+      let userId = "";
+      try {
+        const { uid } = await this.authService.getUserByEmail(
+          invitationData.inviteeEmail
+        );
+        userId = uid;
+      } catch (error) {
+        throw new ApiError("Email is not registered", 400);
+      }
 
       await this.activityService.writeInvitationActivity({
         type: "invite",
-        inviteeId: uid,
+        inviteeId: userId,
         teamId: invitationData.teamId,
         invitationId: "",
         userId,
@@ -177,6 +183,8 @@ export class InvitationService {
       transaction.update(invitationRef, {
         invitationStatus,
         updatedAt: new Date().toISOString(),
+        joinedDate:
+          invitationStatus == "accepted" ? new Date().toISOString() : null,
       });
 
       return { message: `Invitation ${invitationStatus} successfully` };
