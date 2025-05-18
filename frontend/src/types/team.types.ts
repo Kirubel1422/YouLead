@@ -36,4 +36,5 @@ export interface ITeamMember {
      status: OnlineStatus;
      role: string;
      teamId: string;
+     email: string;
 }

@@ -1,4 +1,4 @@
-type ProjectStatusTypes = "pending" | "pastDue" | "completed";
+export type ProjectStatusTypes = "pending" | "pastDue" | "completed";
 
 export interface ProjectState {
      projects: IProject[];
@@ -35,6 +35,8 @@ export interface ProjectStatus {
 }
 
 export interface Pagination {
-     page: number;
-     limit: number;
+     page?: number;
+     limit?: number;
 }
+
+export type ProjectFilter = "pastDue" | "pending" | "completed" | "all" | "" | undefined;

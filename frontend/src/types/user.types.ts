@@ -2,6 +2,7 @@ import { ProjectStatus } from "./project.types";
 import { TaskStatus } from "./task.types";
 
 export type UserRole = "admin" | "teamLeader" | "teamMember" | "coLeader";
+export type AccountStatus = "active" | "inactive";
 
 export interface IUser {
      role: UserRole;
@@ -10,10 +11,11 @@ export interface IUser {
      updatedAt: string;
      uid: string;
      profile: IProfile;
-     accountStatus: "active" | "inactive";
+     accountStatus: AccountStatus;
      teamId?: string;
      taskStatus?: TaskStatus;
      projectStatus?: ProjectStatus;
+     workRole?: string;
 }
 
 export interface IProfile {

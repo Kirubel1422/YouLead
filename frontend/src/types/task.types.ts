@@ -35,3 +35,5 @@ export interface ITaskMetaData {
 }
 
 export type TaskFilter = "today" | "upcoming" | "all" | undefined;
+
+export type IEditTask = Pick<ITask, "description" | "name" | "priority" | "status" | "teamId" | "projectId">;
