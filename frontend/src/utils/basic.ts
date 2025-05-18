@@ -1,3 +1,5 @@
+import { ProjectStatusTypes } from "@/types/project.types";
+import { TaskPriorityType, TaskStatus, TaskStatusType } from "@/types/task.types";
 import { UserRole } from "@/types/user.types";
 import { format, formatDistance, isSameDay, isToday, isValid, parseISO, subDays } from "date-fns";
 
@@ -41,16 +43,14 @@ export const formatChatTime = (dateString: string): string => {
      return format(date, "dd/MM/yyyy h:mm a");
 };
 
-export const getStatusColor = (status: string) => {
+export const getStatusColor = (status: ProjectStatusTypes) => {
      switch (status) {
-          case "Completed":
+          case "completed":
                return "bg-green-100 text-green-800";
-          case "In Progress":
+          case "pending":
                return "bg-blue-100 text-blue-800";
-          case "To Do":
-               return "bg-gray-100 text-gray-800";
-          case "In Review":
-               return "bg-purple-100 text-purple-800";
+          case "pastDue":
+               return "bg-red-500 text-red-50";
           default:
                return "bg-gray-100 text-gray-800";
      }
@@ -64,11 +64,28 @@ export const isOverdue = (dateString: string) => {
 
 export const formatDate = (dateString: string) => {
      const date = new Date(dateString);
-     return new Intl.DateTimeFormat("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-     }).format(date);
+     try {
+          return new Intl.DateTimeFormat("en-US", {
+               month: "short",
+               day: "numeric",
+               year: "numeric",
+          }).format(date);
+     } catch (error) {
+          if (!isValid(dateString)) {
+               return "-";
+          }
+     }
+};
+
+export const statusLabel = (priority: TaskStatusType) => {
+     switch (priority) {
+          case "completed":
+               return "Completed";
+          case "pastDue":
+               return "Past Due";
+          case "pending":
+               return "Pending";
+     }
 };
 
 export const getPriorityColor = (priority: string) => {
@@ -161,4 +178,13 @@ export const aiResponseToHTML = (text: string) => {
 export const exists = (user: any): boolean => {
      if (!user) return false;
      return Object.keys(user).length > 0;
+};
+
+export const getBackgroundColor = (value: number = 0) => {
+     // Clamp value to [0, 100]
+     value = Math.max(0, Math.min(100, value));
+     // 0 = red (hue 0), 50 = yellow (hue 60), 100 = green (hue 120)
+     // Interpolate hue from 0 to 120
+     const hue = value * 1.2; // 0 to 120
+     return `hsl(${hue}, 90%, 50%)`;
 };
