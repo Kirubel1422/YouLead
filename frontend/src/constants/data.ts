@@ -6,7 +6,7 @@ import { Calendar, FileText, HardHat, HelpCircle, Home, LucideIcon, Mail, Messag
 export type SidebarItem = {
      id: string;
      label: string;
-     to: string;
+     to: string[];
      icon: LucideIcon;
      onBoarding?: boolean;
      onClick?: () => void;
@@ -16,25 +16,25 @@ export const sidebar: SidebarItem[] = [
      {
           id: "dashboard",
           label: "Dashboard",
-          to: "/dashboard",
+          to: ["/dashboard", "/dashboard/leader"],
           icon: Home,
      },
      {
           id: "tasks",
           label: "Tasks",
-          to: "/dashboard/tasks",
+          to: ["/dashboard/tasks"],
           icon: FileText,
      },
      {
           id: "projects",
           label: "Projects",
-          to: "/dashboard/projects",
+          to: ["/dashboard/projects"],
           icon: HardHat,
      },
      {
           id: "calendar",
           label: "Calendar",
-          to: "/dashboard/calendar",
+          to: ["/dashboard/calendar"],
           icon: Calendar,
      },
      // {
@@ -57,25 +57,25 @@ export const onBoardingSidebar: OnboardingSidebarItem[] = [
      {
           id: "dashboard",
           label: "Dashboard",
-          to: "/dashboard",
+          to: "/dashboard/onboarding",
           icon: Home,
      },
-     {
-          id: "helpAndSupport",
-          label: "Help and Suppport",
-          onClick: () => null,
-          icon: HelpCircle,
-     },
-     {
-          id: "invitations",
-          label: "Invitations",
-          onClick: () => null,
-          icon: Mail,
-     },
-     {
-          id: "joinTeam",
-          label: "Join Team",
-          onClick: () => null,
-          icon: UserPlus,
-     },
+     // {
+     //      id: "helpAndSupport",
+     //      label: "Help and Suppport",
+     //      onClick: () => null,
+     //      icon: HelpCircle,
+     // },
+     // {
+     //      id: "invitations",
+     //      label: "Invitations",
+     //      onClick: () => null,
+     //      icon: Mail,
+     // },
+     // {
+     //      id: "joinTeam",
+     //      label: "Join Team",
+     //      onClick: () => null,
+     //      icon: UserPlus,
+     // },
 ];
