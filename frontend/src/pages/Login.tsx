@@ -13,7 +13,7 @@ import { useToast } from "@/components/Toast";
 import { Loadable } from "@/components/state";
 import { useDispatch } from "react-redux";
 import { login } from "@/store/auth/authSlice";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 export default function Login() {
      const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -44,7 +44,11 @@ export default function Login() {
                showToast(response.message, "success");
                dispatch(login(response.data));
                reset();
-               navigate("/dashboard");
+               if (response.data.role === "teamLeader") {
+                    navigate("/dashboard/leader");
+               } else if (response.data.role === "teamMember") {
+                    navigate("/dashboard");
+               }
           } catch (error: any) {
                showToast(error?.data?.message || "Something went wrong. Please try again later.", "error");
           }
@@ -126,7 +130,7 @@ export default function Login() {
                          </CardContent>
 
                          <CardFooter className="flex flex-col space-y-4 mt-8">
-                              <Button type="submit" className="w-full" disabled={isLoading}>
+                              <Button variant={"primary"} type="submit" className="w-full" disabled={isLoading}>
                                    <Loadable isLoading={isLoading}>Login</Loadable>
                               </Button>
 
@@ -172,9 +176,9 @@ export default function Login() {
 
                               <p className="text-center text-sm text-gray-600">
                                    Don't have an account?{" "}
-                                   <a href="#" className="text-primary font-medium hover:underline">
+                                   <Link to="/signup" className="text-[#4f46e5] font-medium hover:underline">
                                         Sign up
-                                   </a>
+                                   </Link>
                               </p>
                          </CardFooter>
                     </form>

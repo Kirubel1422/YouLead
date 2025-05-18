@@ -15,6 +15,7 @@ import { Label } from "@radix-ui/react-label";
 import {
      ArrowLeftIcon,
      ArrowRightIcon,
+     BriefcaseBusiness,
      EyeIcon,
      EyeOffIcon,
      LockIcon,
@@ -25,7 +26,7 @@ import {
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 export default function Signup() {
      const [currentStep, setCurrentStep] = useState<number>(1);
@@ -196,6 +197,26 @@ export default function Signup() {
                                         </div>
 
                                         <div className="space-y-2">
+                                             <Label htmlFor="workRole" className="text-sm font-medium">
+                                                  Work Role
+                                             </Label>
+                                             <AuthInput
+                                                  id="workRole"
+                                                  {...register("workRole")}
+                                                  type="text"
+                                                  placeholder="Ex. Frontend Developer"
+                                                  className="pl-10"
+                                                  preIcon={
+                                                       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                                            <BriefcaseBusiness className="w-5 h-5" />
+                                                       </div>
+                                                  }
+                                                  error={errors.workRole?.message}
+                                                  disabled={isLoading}
+                                             />
+                                        </div>
+
+                                        <div className="space-y-2">
                                              <Label htmlFor="password" className="text-sm font-medium">
                                                   Password*
                                              </Label>
@@ -304,7 +325,13 @@ export default function Signup() {
                          </CardContent>
                          <CardFooter className="flex flex-col space-y-4 mt-8">
                               {currentStep === 1 ? (
-                                   <Button type="button" className="w-full" onClick={handleNext} disabled={isLoading}>
+                                   <Button
+                                        variant={"primary"}
+                                        type="button"
+                                        className="w-full"
+                                        onClick={handleNext}
+                                        disabled={isLoading}
+                                   >
                                         Next <ArrowRightIcon className="ml-2 h-4 w-4" />
                                    </Button>
                               ) : (
@@ -318,7 +345,12 @@ export default function Signup() {
                                         >
                                              <ArrowLeftIcon className="mr-2 h-4 w-4" /> Back
                                         </Button>
-                                        <Button type="submit" className="flex-1" disabled={isLoading}>
+                                        <Button
+                                             variant={"primary"}
+                                             type="submit"
+                                             className="flex-1"
+                                             disabled={isLoading}
+                                        >
                                              <Loadable isLoading={isLoading}>Create account</Loadable>
                                         </Button>
                                    </div>
@@ -374,9 +406,9 @@ export default function Signup() {
 
                               <p className="text-center text-sm text-gray-600">
                                    Already have an account?{" "}
-                                   <a href="#" className="text-primary font-medium hover:underline">
+                                   <Link to="/login" className="text-[#4f46e5] font-medium hover:underline">
                                         Sign in
-                                   </a>
+                                   </Link>
                               </p>
                          </CardFooter>
                     </form>
