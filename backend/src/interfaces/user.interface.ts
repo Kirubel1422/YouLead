@@ -1,3 +1,5 @@
+export type AccountStatus = "active" | "inactive";
+
 import { ProjectStatus } from "./project.interface";
 import { TaskStatus } from "./task.interface";
 
@@ -20,6 +22,7 @@ export interface IUser {
   taskStatus?: TaskStatus;
   projectStatus?: ProjectStatus;
   attendanceInfoId: string;
+  workRole?: string;
 }
 
 export interface IProfile {
@@ -29,4 +32,5 @@ export interface IProfile {
   phoneNumber?: string;
   profilePicture?: string;
   password?: string;
+  workRole?: string;
 }

@@ -1,6 +1,6 @@
 import { IProjectMembers } from "./project.interface";
 
-type TaskStatusType = "pending" | "completed" | "pastDue";
+export type TaskStatusType = "pending" | "completed" | "pastDue";
 
 export interface TaskStatus {
   completed: number;
