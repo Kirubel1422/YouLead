@@ -8,13 +8,11 @@ export const TaskSchema = z.object({
      status: z.enum(["pending", "completed", "pastDue"], {
           message: "Status must be either pending, completed, or pastDue",
      }),
-     progress: z.number().min(0).max(100),
+     progress: z.number().min(0).max(100).default(0),
      priority: z.enum(["low", "medium", "high"], {
           message: "Priority must be either low, medium, or high",
      }),
-     assignedTo: z.array(z.string()).min(1, {
-          message: "Assigned to must have at least one user",
-     }),
+     assignedTo: z.array(z.string()).optional(),
      deadline: z.array(z.string()).optional(),
      projectId: z.string().min(1, {
           message: "Project ID is required",
