@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 
 import { cn } from "@/lib/utils";
+import { getBackgroundColor } from "@/utils/basic";
 
 function Progress({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
      return (
@@ -15,7 +16,7 @@ function Progress({ className, value, ...props }: React.ComponentProps<typeof Pr
                     className="bg-primary h-full w-full flex-1 transition-all"
                     style={{
                          transform: `translateX(-${100 - (value || 0)}%)`,
-                         background: `rgb(${255 - (value || 0) * 2.55},${(value || 0) * 2.55}, 0)`,
+                         background: getBackgroundColor(value as number),
                     }}
                />
           </ProgressPrimitive.Root>
