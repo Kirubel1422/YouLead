@@ -1,7 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IResponse } from "@/types/response.types";
-import { ITaskDetail, ITaskMetaData, TaskFilter } from "@/types/task.types";
+import { IEditTask, ITask, ITaskDetail, ITaskMetaData, TaskFilter } from "@/types/task.types";
+import { TaskSchemaType } from "@/schemas/task.schema";
 
 export interface IMyTasksResponse {
      tasks: ITaskDetail[];
@@ -85,6 +86,33 @@ const tasksApi = createApi({
 
                invalidatesTags: (_: string | undefined) => (_ != "" ? [{ type: "Tasks", id: "LIST" }] : []),
           }),
+
+          // Update Task
+          updateTask: builder.mutation<string, { taskId: string; body: IEditTask }>({
+               query: ({ taskId, body }) => ({
+                    url: `/update/${taskId}`,
+                    method: "PUT",
+                    body,
+               }),
+
+               transformResponse: (respo: IResponse) => (respo.success ? "Task updated successfully!" : ""),
+
+               invalidatesTags: (res) => (res != "" ? [{ type: "Tasks" as const, id: "LIST" }] : []),
+          }),
+
+          // Create Task
+          createTask: builder.mutation<string, TaskSchemaType>({
+               query: (body) => ({
+                    url: "/create",
+                    body,
+                    method: "POST",
+               }),
+
+               transformResponse: (res: IResponse) => (res.success ? "Task created successfully" : ""),
+
+               invalidatesTags: (res: string | undefined) =>
+                    res != "" ? [{ type: "Tasks" as const, id: "LIST" }] : [],
+          }),
      }),
 });
 
@@ -95,5 +123,7 @@ export const {
      useHandleTaskAssignMutation,
      useHandleTaskUnAssignMutation,
      useHandleDeadlineMutation,
+     useUpdateTaskMutation,
+     useCreateTaskMutation,
 } = tasksApi;
 export default tasksApi;

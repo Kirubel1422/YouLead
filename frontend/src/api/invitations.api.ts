@@ -1,5 +1,6 @@
 import { DOTENV } from "@/constants/env";
 import { IInvitation } from "@/types/invitation.types";
+import { IResponse } from "@/types/response.types";
 import { ITeamDetail } from "@/types/team.types";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
@@ -47,8 +48,19 @@ const invitationsApi = createApi({
                }),
                invalidatesTags: [{ type: "Invitations", id: "LIST" }],
           }),
+
+          // Invite Team Members
+          invite: builder.mutation<string, Record<string, string>>({
+               query: (body) => ({
+                    url: "/invite",
+                    body,
+                    method: "POST",
+               }),
+
+               transformResponse: (resp: IResponse) => (resp.success ? "Successfully sent invitation" : ""),
+          }),
      }),
 });
 
-export const { useFetchMyInvitationsQuery, useRespondMutation } = invitationsApi;
+export const { useFetchMyInvitationsQuery, useRespondMutation, useInviteMutation } = invitationsApi;
 export default invitationsApi;

@@ -37,8 +37,17 @@ const authApi = createApi({
                transformResponse: (resp: IResponse) =>
                     resp.success ? resp.data : ({} as Omit<IUser, "previousPasswords">),
           }),
+
+          // Change Password
+          changePassword: builder.mutation<string, Record<string, string>>({
+               query: (body) => ({
+                    url: "/change-password",
+                    body,
+                    method: "PUT",
+               }),
+          }),
      }),
 });
 
-export const { useLoginMutation, useSignUpMutation, useMeQuery } = authApi;
+export const { useLoginMutation, useSignUpMutation, useMeQuery, useChangePasswordMutation } = authApi;
 export default authApi;
