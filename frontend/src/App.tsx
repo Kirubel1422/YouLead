@@ -15,6 +15,7 @@ import Calendar from "./pages/Client/Calendar";
 import Messages from "./pages/Client/Messages";
 import { IUser } from "./types/user.types";
 import { exists } from "./utils/basic";
+import TeamLeaderDashboard from "./pages/Client/Dash-TeamLeader";
 
 // const authorized = [];
 const unauthorized = ["/login", "/signup"];
@@ -54,6 +55,7 @@ export default function App() {
                     <Route path="/signup" element={<Signup />} />
 
                     <Route path="/dashboard" element={<DashboardGuard user={user} isAuthenticated={isAuthenticated} />}>
+                         <Route path="leader" element={<TeamLeaderDashboard />} />
                          <Route path="" element={<TeamMemberDashboard />} />
                          <Route path="onboarding" element={<OnboardingTeamMember />} />
                          <Route path="profile" element={<Profile />} />
