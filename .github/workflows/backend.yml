@@ -1,0 +1,50 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - master
+    types:
+      - closed
+    repository_dispatch:
+      types: [Deploy_Backend]
+    workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Build Project
+        run: pnpm ci && pnpm run build
+
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Transfer Files to VPS
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p /var/www/youlead/backend"
+          rsync -avz -e "ssh -p ${{ secrets.VPS_PORT }}" dist/ package*.json ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
+
+      - name: Install Dependencies & Restart App
+        run: |
+          ssh -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd /var/www/youlead/backend
+            pnpm ci --production
+            pm2 restart app.ts --name nowinvite
+            pm2 save
+            pm2 status
+          EOF
