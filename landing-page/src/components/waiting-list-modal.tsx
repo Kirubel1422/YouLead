@@ -34,10 +34,29 @@ export function WaitingListModal({
     setIsSubmitting(true);
 
     // Simulate API call
-    setTimeout(() => {
-      setIsSubmitted(true);
-      setIsSubmitting(false);
-    }, 1000);
+    fetch("https://app.youlead.com/api/payment/waiting-list", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, planName }),
+    })
+      .then((response) => {
+        if (response.ok) {
+          alert("Thank you for joining the waiting list!");
+          setIsSubmitted(true);
+        } else {
+          // Handle error
+          alert("There was an error submitting the form. Please try again.");
+          console.error("Error submitting form");
+        }
+      })
+      .catch((error) => {
+        console.error("Error submitting form", error);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
   };
 
   return (
@@ -48,7 +67,7 @@ export function WaitingListModal({
             Join the {planName} Waiting List
           </DialogTitle>
           <DialogDescription className="text-[#6B7280] mt-2">
-            We're finalizing our pricing based on customer needs. Join our
+            We&apos;re finalizing our pricing based on customer needs. Join our
             waiting list to be the first to know when {planName} is available.
           </DialogDescription>
         </DialogHeader>
@@ -89,7 +108,7 @@ export function WaitingListModal({
               Thank you for joining!
             </h3>
             <p className="mt-2 text-[#6B7280]">
-              We'll notify you when the {planName} plan becomes available.
+              We&apos;ll notify you when the {planName} plan becomes available.
             </p>
             <Button
               onClick={onClose}

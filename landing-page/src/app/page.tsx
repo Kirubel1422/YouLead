@@ -1,15 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import {
-  ArrowRight,
-  Check,
-  ChevronRight,
-  Code,
-  Lightbulb,
-  Rocket,
-} from "lucide-react";
+import { Check, ChevronRight, Code, Lightbulb, Rocket } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -24,12 +16,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  GetStarted,
   GetStartedForFree,
   GetStartedWithArrow,
   Login,
   SignUp,
 } from "@/components/custom/button/buttons";
+import Payment from "@/components/section/Payment";
 
 export default function LandingPage() {
   return (
@@ -82,15 +74,15 @@ export default function LandingPage() {
             </h1>
             <p className="mt-6 text-lg text-[#6B7280] max-w-2xl">
               Streamline your workflow, manage projects efficiently, and
-              leverage AI to optimize your team's performance.
+              leverage AI to optimize your team&apos;s performance.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row ">
               <GetStartedWithArrow />
             </div>
             <div className="mt-16 relative w-full max-w-5xl">
-              <div className="aspect-[16/9] overflow-hidden rounded-xl shadow-2xl">
+              <div className="aspect-[16/9] h-fit flex flex-col items-center justify-center overflow-hidden rounded-xl shadow-2xl">
                 <Image
-                  src="/placeholder.svg?height=1080&width=1920"
+                  src="/images/screen1.png"
                   alt="YouLead Dashboard"
                   width={1920}
                   height={1080}
@@ -135,7 +127,7 @@ export default function LandingPage() {
                 <CardContent>
                   <p className="text-[#6B7280]">
                     Let our AI suggest optimal task sequences and workflows
-                    based on your team's performance patterns.
+                    based on your team&apos;s performance patterns.
                   </p>
                 </CardContent>
               </Card>
@@ -234,14 +226,14 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button className="mt-8 bg-[#4F46E5] hover:bg-[#4338CA]">
+                {/* <Button className="mt-8 bg-[#4F46E5] hover:bg-[#4338CA]">
                   Learn More
-                </Button>
+                </Button> */}
               </div>
               <div className="relative">
-                <div className="aspect-[4/3] overflow-hidden rounded-xl shadow-xl">
+                <div className="aspect-[4/3] h-fit overflow-hidden flex flex-col items-center justify-center rounded-xl shadow-xl">
                   <Image
-                    src="/placeholder.svg?height=900&width=1200"
+                    src="/images/screen2.png"
                     alt="Product Management Dashboard"
                     width={1200}
                     height={900}
@@ -258,9 +250,9 @@ export default function LandingPage() {
           <div className="container">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div className="order-2 md:order-1 relative">
-                <div className="aspect-[4/3] overflow-hidden rounded-xl shadow-xl">
+                <div className="aspect-[4/3] h-fit flex items-center justify-center flex-col overflow-hidden rounded-xl shadow-xl">
                   <Image
-                    src="/placeholder.svg?height=900&width=1200"
+                    src="/images/screen3.png"
                     alt="Comprehensive Calendar Dashboard"
                     width={1200}
                     height={900}
@@ -274,8 +266,9 @@ export default function LandingPage() {
                   & Team Performance Metrics
                 </h2>
                 <p className="mt-4 text-[#6B7280]">
-                  Stay on top of deadlines and measure your team's productivity
-                  with our integrated calendar and performance analytics.
+                  Stay on top of deadlines and measure your team&apos;s
+                  productivity with our integrated calendar and performance
+                  analytics.
                 </p>
                 <ul className="mt-8 space-y-4">
                   {[
@@ -298,187 +291,7 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section className="py-20 bg-[#F3F4F6]" id="pricing">
-          <div className="container mx-auto">
-            <h2 className="text-center text-3xl font-bold text-[#111827] mb-4">
-              Affordable Plans To Scale Your{" "}
-              <span className="text-[#4F46E5]">Business</span>
-            </h2>
-            <p className="text-center text-[#6B7280] max-w-2xl mx-auto mb-12">
-              Choose the perfect plan that fits your team's needs and budget.
-              All plans include our core features.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Free Plan */}
-              <Card className="border-none shadow-lg">
-                <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-[#EEF2FF] rounded-lg flex items-center justify-center mb-4">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#4F46E5"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6" />
-                      <path d="M9 22h9a2 2 0 0 0 2-2v-7" />
-                      <path d="M13 14h7" />
-                      <path d="M13 10h7" />
-                      <path d="M9 6h1" />
-                      <path d="M9 10h1" />
-                      <path d="M9 14h1" />
-                      <path d="M17 18h3v3" />
-                      <path d="m14 15 6 6" />
-                    </svg>
-                  </div>
-                  <CardTitle className="text-2xl text-[#111827]">
-                    FREE
-                  </CardTitle>
-                  <CardDescription className="text-[#6B7280]">
-                    Perfect for individuals and small teams
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-bold text-[#111827]">
-                      $0
-                    </span>
-                    <span className="text-[#6B7280]">/month</span>
-                  </div>
-                  <ul className="space-y-3">
-                    {[
-                      "Up to 5 projects",
-                      "Basic task management",
-                      // "Calendar integration",
-                      "Email support",
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-start">
-                        <Check className="mr-2 h-5 w-5 text-[#4F46E5]" />
-                        <span className="text-[#111827]">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <GetStarted />
-                </CardContent>
-              </Card>
-
-              {/* Pro Plan */}
-              <Card className="border-none shadow-lg relative">
-                <div className="absolute top-0 right-0 bg-[#4F46E5] text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
-                  POPULAR
-                </div>
-                <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-[#EEF2FF] rounded-lg flex items-center justify-center mb-4">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#4F46E5"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 2H2v10h10V2Z" />
-                      <path d="M22 12h-8v10h8V12Z" />
-                      <path d="M12 12H2v10h10V12Z" />
-                      <path d="M22 2h-8v8h8V2Z" />
-                    </svg>
-                  </div>
-                  <CardTitle className="text-2xl text-[#111827]">PRO</CardTitle>
-                  <CardDescription className="text-[#6B7280]">
-                    Ideal for growing teams and businesses
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-bold text-[#111827]">
-                      $19
-                    </span>
-                    <span className="text-[#6B7280]">/month</span>
-                  </div>
-                  <ul className="space-y-3">
-                    {[
-                      "Unlimited projects",
-                      "Advanced task management",
-                      "AI workflow suggestions",
-                      "Meeting management",
-                      "Priority support",
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-start">
-                        <Check className="mr-2 h-5 w-5 text-[#4F46E5]" />
-                        <span className="text-[#111827]">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <GetStarted />
-                </CardContent>
-              </Card>
-
-              {/* Enterprise Plan */}
-              <Card className="border-none shadow-lg">
-                <CardHeader className="pb-2">
-                  <div className="w-12 h-12 bg-[#EEF2FF] rounded-lg flex items-center justify-center mb-4">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#4F46E5"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" />
-                      <path d="M17 18h1" />
-                      <path d="M12 18h1" />
-                      <path d="M7 18h1" />
-                    </svg>
-                  </div>
-                  <CardTitle className="text-2xl text-[#111827]">
-                    ENTERPRISE
-                  </CardTitle>
-                  <CardDescription className="text-[#6B7280]">
-                    For large organizations with complex needs
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="mt-4 mb-8">
-                    <span className="text-4xl font-bold text-[#111827]">
-                      $39
-                    </span>
-                    <span className="text-[#6B7280]">/month</span>
-                  </div>
-                  <ul className="space-y-3">
-                    {[
-                      "Everything in Pro",
-                      "Custom integrations",
-                      "Advanced analytics",
-                      "Dedicated account manager",
-                      "SLA guarantees",
-                      "24/7 phone support",
-                    ].map((feature) => (
-                      <li key={feature} className="flex items-start">
-                        <Check className="mr-2 h-5 w-5 text-[#4F46E5]" />
-                        <span className="text-[#111827]">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className="mt-8 w-full bg-[#4F46E5] hover:bg-[#4338CA]">
-                    Contact Sales
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
+        <Payment />
 
         {/* FAQ Section */}
         <section className="py-20 bg-white" id="faq">
@@ -502,9 +315,9 @@ export default function LandingPage() {
                     How does the AI task workflow feature work?
                   </AccordionTrigger>
                   <AccordionContent className="text-[#6B7280] pb-4">
-                    Our AI analyzes your team's work patterns, project
+                    Our AI analyzes your team&apos;s work patterns, project
                     requirements, and deadlines to suggest optimal task
-                    sequences and workflows. It learns from your team's
+                    sequences and workflows. It learns from your team&apos;s
                     performance over time to provide increasingly accurate
                     recommendations.
                   </AccordionContent>
@@ -515,7 +328,7 @@ export default function LandingPage() {
                   className="border-b border-[#E5E7EB]"
                 >
                   <AccordionTrigger className="text-[#111827] hover:text-[#4F46E5] py-4">
-                    Can I integrate with other tools I'm already using?
+                    Can I integrate with other tools I&apos;m already using?
                   </AccordionTrigger>
                   <AccordionContent className="text-[#6B7280] pb-4">
                     Yes, our platform offers integrations with popular tools
@@ -549,8 +362,8 @@ export default function LandingPage() {
                   </AccordionTrigger>
                   <AccordionContent className="text-[#6B7280] pb-4">
                     You can upgrade or downgrade your plan at any time. When
-                    upgrading, you'll get immediate access to new features. If
-                    you downgrade, the changes will take effect at the end of
+                    upgrading, you&apos;ll get immediate access to new features.
+                    If you downgrade, the changes will take effect at the end of
                     your current billing cycle.
                   </AccordionContent>
                 </AccordionItem>
@@ -580,8 +393,8 @@ export default function LandingPage() {
               Our Product <span className="text-[#4F46E5]">Roadmap</span>
             </h2>
             <p className="text-center text-[#6B7280] max-w-2xl mx-auto mb-12">
-              We're constantly improving You Lead. Here's what we're working on
-              next.
+              We&apos;re constantly improving You Lead. Here&apos;s what
+              we&apos;re working on next.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
