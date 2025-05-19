@@ -134,7 +134,7 @@ export default function Login() {
                                    <Loadable isLoading={isLoading}>Login</Loadable>
                               </Button>
 
-                              <div className="relative">
+                              {/* <div className="relative">
                                    <div className="absolute inset-0 flex items-center">
                                         <Separator />
                                    </div>
@@ -143,8 +143,8 @@ export default function Login() {
                                              Or continue with
                                         </span>
                                    </div>
-                              </div>
-
+                              </div> */}
+                              {/* 
                               <Button
                                    type="button"
                                    variant="outline"
@@ -172,7 +172,7 @@ export default function Login() {
                                         <path fill="none" d="M1 1h22v22H1z" />
                                    </svg>
                                    Continue with Google
-                              </Button>
+                              </Button> */}
 
                               <p className="text-center text-sm text-gray-600">
                                    Don't have an account?{" "}

@@ -362,14 +362,14 @@ export default function Signup() {
                                              <div className="absolute inset-0 flex items-center">
                                                   <Separator />
                                              </div>
-                                             <div className="relative flex justify-center text-xs uppercase">
+                                             {/* <div className="relative flex justify-center text-xs uppercase">
                                                   <span className="bg-background px-2 text-muted-foreground">
                                                        Or continue with
                                                   </span>
-                                             </div>
+                                             </div> */}
                                         </div>
 
-                                        <Button
+                                        {/* <Button
                                              type="button"
                                              variant="outline"
                                              className="w-full"
@@ -400,7 +400,7 @@ export default function Signup() {
                                                   <path fill="none" d="M1 1h22v22H1z" />
                                              </svg>
                                              Continue with Google
-                                        </Button>
+                                        </Button> */}
                                    </>
                               )}
 
