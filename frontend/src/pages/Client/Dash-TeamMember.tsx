@@ -410,9 +410,7 @@ const TaskCard = ({ task, formatDate, isOverdue, setTaskDetailOpen, setTargetTas
                                         >
                                              View Details
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem>Mark as Complete</DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem>Remove</DropdownMenuItem>
                                    </DropdownMenuContent>
                               </DropdownMenu>
                          </div>

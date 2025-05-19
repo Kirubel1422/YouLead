@@ -28,6 +28,7 @@ import Join from "../modal/team/Join";
 import { useJoinTeamMutation } from "@/api/team.api";
 import { saveProjects } from "@/store/projects/projectsSlice";
 import ProjectDetail from "../modal/project/ProjectDetail";
+import { logo } from "@/assets";
 
 export default function AppSidebar() {
      const location = useLocation();
@@ -99,8 +100,10 @@ export default function AppSidebar() {
      return (
           <Sidebar>
                <SidebarContent className="bg-white shadow-lg">
-                    <div className="flex items-center justify-between p-4 border-b">
-                         <h1 className="text-xl font-bold text-primary">You Lead</h1>
+                    <div className="flex items-center justify-center p-4 border-b">
+                         <Link to="/dashboard">
+                              <img src={logo} className="h-20" />
+                         </Link>
                     </div>
 
                     <SidebarGroup>
