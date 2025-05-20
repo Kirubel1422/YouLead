@@ -35,12 +35,15 @@ jobs:
       - name: Install Dependencies
         run: |
           cd frontend/
+          echo "Installing Client Side Dependencies"
           pnpm install ||
 
           cd ../backend/
+          echo "Installing Backend Dependencies"
           pnpm install ||
 
           cd ../landing-page
+          echo "Installing Landing Page Dependencies"
           pnpm install ||
 
           cd ../
