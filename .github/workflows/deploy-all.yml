@@ -103,7 +103,7 @@ jobs:
             sudo chmod 755 /var/www/youlead/backend
 
       - name: Send Backend Build Files to VPS
-        run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
+        run: rsync -avrz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
 
       - name: Start Backend
         uses: appleboy/ssh-action@v0.1.7
