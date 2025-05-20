@@ -148,6 +148,11 @@ jobs:
             pm2 status
 
       - name: Restart Nginx
-        run: |
-          sudo nginx -t 
-          sudo systemctl restart nginx
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            sudo service nginx restart
