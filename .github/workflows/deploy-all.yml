@@ -26,39 +26,39 @@ jobs:
         run: npm i -g pnpm
 
       - name: Install Dependencies
-        scripts: |
+        run: |
           cd frontend/
-          pnpm install
+          pnpm install ||
 
           cd ../backend/
-          pnpm install
+          pnpm install ||
 
           cd ../landing-page
-          pnpm install
+          pnpm install ||
 
           cd ../
 
       - name: Build Landing page
-        script: |
+        run: |
           cd landing-page/
-          pnpm run build
+          pnpm run build || exit 1
 
       - name: Build Client Dashboard
         env:
           DOTENV_KEY: ${{ secrets.FRONTEND_DOTENV_KEY }}
-        script: |
+        run: |
           cd frontend/
-          pnpm run build
+          pnpm run build || exit 1
 
       - name: Build Backend
         env:
           DOTENV_KEY: ${{ secrets.BACKEND_DOTENV_KEY }}
-        script: |
+        run: |
           cd backend
-          pnpm run build
+          pnpm run build || exit 1
 
       - name: Add SSH key on Runner
-        script: |
+        run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" >> ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
@@ -76,7 +76,7 @@ jobs:
           script: |
             mkdir -p /var/www/youlead/frontend
             sudo chown /var/www/youlead/frontend ${{ secrets.VPS_USER }}
-            sudo chmod chmod 777 /var/www/youlead/frontend
+            sudo chmod 755 /var/www/youlead/frontend
 
       - name: Send Frontend Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
@@ -97,7 +97,7 @@ jobs:
           script: |
             mkdir -p /var/www/youlead/backend
             sudo chown /var/www/youlead/backend ${{ secrets.VPS_USER }}
-            sudo chmod chmod 777 /var/www/youlead/backend
+            sudo chmod chmod 755 /var/www/youlead/backend
 
       - name: Send Backend Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
@@ -109,7 +109,8 @@ jobs:
           script: |
             rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
             cd /var/www/youlead/backend
-            pm2 start --name YouLead-Backend
+            pnpm install --prod
+            pm2 start dist/app.js --name YouLead-Backend
             pm2 save 
             pm2 status
 
@@ -123,7 +124,7 @@ jobs:
           script: |
             mkdir -p /var/www/youlead/landing-page
             sudo chown /var/www/youlead/landing-page ${{ secrets.VPS_USER }}
-            sudo chmod 777 /var/www/youlead/landing-page
+            sudo chmod 755 /var/www/youlead/landing-page
 
       - name: Send Landing Page Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
