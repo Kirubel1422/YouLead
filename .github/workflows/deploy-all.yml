@@ -34,10 +34,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pnpm install --frozen-lockfile=false
-
-      - name: Install Dependencies
-        run: |
           cd frontend/
           echo "Installing Client Side Dependencies"
           pnpm install --frozen-lockfile
