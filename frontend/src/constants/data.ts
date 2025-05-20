@@ -1,4 +1,4 @@
-import { Calendar, FileText, HardHat, HelpCircle, Home, LucideIcon, Mail, MessageSquare, UserPlus } from "lucide-react";
+import { Calendar, FileText, HardHat, Home, LucideIcon } from "lucide-react";
 
 /*
     Sidebar 

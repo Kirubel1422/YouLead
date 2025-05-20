@@ -8,7 +8,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginSchema, LoginSchemaType } from "@/schemas/auth.schema";
 import { useLoginMutation } from "@/api/auth.api";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/Toast";
 import { Loadable } from "@/components/state";
 import { useDispatch } from "react-redux";
@@ -54,10 +53,10 @@ export default function Login() {
           }
      };
 
-     const handleGoogleSignIn = () => {
-          // Handle Google sign-in logic here
-          console.log("Google sign-in clicked");
-     };
+     // const handleGoogleSignIn = () => {
+     //      // Handle Google sign-in logic here
+     //      console.log("Google sign-in clicked");
+     // };
 
      return (
           <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -83,7 +82,7 @@ export default function Login() {
                                         }
                                         id="email"
                                         type="email"
-                                        error={errors.email?.message}
+                                        error={!!errors.email?.message}
                                         placeholder="john@example.com"
                                         {...register("email")}
                                         disabled={isLoading}
@@ -105,7 +104,7 @@ export default function Login() {
                                         type={showPassword ? "text" : "password"}
                                         placeholder="••••••••"
                                         {...register("password")}
-                                        error={errors.password?.message}
+                                        error={!!errors.password?.message}
                                         disabled={isLoading}
                                         suffixIcon={
                                              <button

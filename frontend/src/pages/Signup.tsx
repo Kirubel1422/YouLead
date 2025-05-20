@@ -72,10 +72,10 @@ export default function Signup() {
           }
      };
 
-     const handleGoogleSignUp = () => {
-          // Handle Google sign-up logic here
-          console.log("Google sign-up clicked");
-     };
+     // const handleGoogleSignUp = () => {
+     //      // Handle Google sign-up logic here
+     //      console.log("Google sign-up clicked");
+     // };
 
      const validateStep1 = () => {
           const isValid =
@@ -133,7 +133,7 @@ export default function Signup() {
                                                        id="firstName"
                                                        {...register("firstName")}
                                                        placeholder="John"
-                                                       error={errors.firstName?.message}
+                                                       error={!!errors.firstName?.message}
                                                        disabled={isLoading}
                                                   />
                                              </div>
@@ -151,7 +151,7 @@ export default function Signup() {
                                                        id="lastName"
                                                        {...register("lastName")}
                                                        placeholder="Doe"
-                                                       error={errors.lastName?.message}
+                                                       error={!!errors.lastName?.message}
                                                        disabled={isLoading}
                                                   />
                                              </div>
@@ -172,7 +172,7 @@ export default function Signup() {
                                                   type="email"
                                                   placeholder="name@company.com"
                                                   disabled={isLoading}
-                                                  error={errors.email?.message}
+                                                  error={!!errors.email?.message}
                                              />
                                         </div>
 
@@ -191,7 +191,7 @@ export default function Signup() {
                                                             <PhoneIcon className="h-5 w-5" />
                                                        </div>
                                                   }
-                                                  error={errors.phoneNumber?.message}
+                                                  error={!!errors.phoneNumber?.message}
                                                   disabled={isLoading}
                                              />
                                         </div>
@@ -211,7 +211,7 @@ export default function Signup() {
                                                             <BriefcaseBusiness className="w-5 h-5" />
                                                        </div>
                                                   }
-                                                  error={errors.workRole?.message}
+                                                  error={!!errors.workRole?.message}
                                                   disabled={isLoading}
                                              />
                                         </div>
@@ -244,7 +244,7 @@ export default function Signup() {
                                                             )}
                                                        </button>
                                                   }
-                                                  error={errors.password?.message}
+                                                  error={!!errors.password?.message}
                                                   disabled={isLoading}
                                              />
                                         </div>
@@ -255,7 +255,7 @@ export default function Signup() {
                                              </Label>
                                              <div className="relative">
                                                   <AuthInput
-                                                       error={errors.confirmPassword?.message}
+                                                       error={!!errors.confirmPassword?.message}
                                                        id="confirmPassword"
                                                        preIcon={
                                                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">

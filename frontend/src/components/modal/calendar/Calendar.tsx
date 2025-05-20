@@ -27,7 +27,7 @@ export function CalendarModal({ open, onOpenChange }: CalendarModalProps) {
      const [generatingErr, setGeneratingErr] = useState<string>(""); // SSE error
 
      // Fetch user events
-     const { data: events, isFetching: fetchingEvents } = useMyEventsQuery();
+     const { data: events } = useMyEventsQuery();
 
      // // Generate task prioritization
      const generatePrioritization = async () => {

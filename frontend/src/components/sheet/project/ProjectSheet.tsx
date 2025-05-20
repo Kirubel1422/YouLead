@@ -32,7 +32,6 @@ interface ProjectSheetProps {
      isEditing?: boolean;
      teamId: string;
      members: ITeamMember[];
-     onSave?: (project: Partial<IProject>) => void;
      userRole: string;
 }
 
@@ -43,7 +42,6 @@ export default function ProjectSheet({
      isEditing = false,
      teamId,
      members,
-     onSave,
      userRole,
 }: ProjectSheetProps) {
      const { showToast } = useToast();

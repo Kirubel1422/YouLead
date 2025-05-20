@@ -48,7 +48,7 @@ interface MemberDetailProps {
      showToast: (message: string, type: "success" | "error") => void;
 }
 
-const Member = ({ open, user, setOpen, selectedProject, showToast }: MemberDetailProps) => {
+const Member = ({ open, setOpen, selectedProject, showToast }: MemberDetailProps) => {
      const [finish, { isLoading: markingComplete }] = useMarkTaskCompleteMutation();
 
      const markComplete = async () => {

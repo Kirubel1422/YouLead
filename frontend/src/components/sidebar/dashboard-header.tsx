@@ -1,8 +1,5 @@
-import { Bell, Search, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { RoleSwitcher } from "./role-switcher";
-import { DefaultUserRoleType } from "@/types/auth.types";
 import {
      DropdownMenu,
      DropdownMenuContent,
@@ -22,11 +19,8 @@ export function DashboardHeader() {
      return (
           <header className="bg-white shadow-sm z-10">
                <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center">
-                         
-                    </div>
+                    <div className="flex items-center"></div>
                     <div className="flex items-center space-x-3">
-
                          <DropdownMenu>
                               <DropdownMenuTrigger>
                                    <Button variant="ghost" size="icon">

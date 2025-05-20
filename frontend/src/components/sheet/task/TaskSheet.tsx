@@ -75,7 +75,6 @@ export default function TaskSheet({
           reset,
           setValue,
           watch,
-          getValues,
      } = useForm<TaskSchemaType>({
           resolver: zodResolver(TaskSchema),
           defaultValues: isEditing
@@ -602,7 +601,9 @@ export default function TaskSheet({
                                         OK
                                    </Button>
                               ) : (
-                                   <Button variant={"primary"} type="submit">{isEditing ? "Update Task" : "Create Task"}</Button>
+                                   <Button variant={"primary"} type="submit">
+                                        {isEditing ? "Update Task" : "Create Task"}
+                                   </Button>
                               )}
                          </SheetFooter>
                     </form>

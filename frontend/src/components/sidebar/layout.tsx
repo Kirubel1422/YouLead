@@ -16,13 +16,7 @@ export default function Layout({ children }: Props) {
                     <SidebarTrigger className="absolute" />
 
                     <div className="w-full">
-                         <DashboardHeader
-                              searchQuery=""
-                              setSearchQuery={(query: string) => {
-                                   console.log(query);
-                              }}
-                              currentRole="teamMember"
-                         />
+                         <DashboardHeader />
 
                          <div className="lg:px-5 md:px-4 px-0  w-full py-3">{children}</div>
                     </div>

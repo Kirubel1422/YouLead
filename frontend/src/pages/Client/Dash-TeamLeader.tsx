@@ -1,26 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-     DropdownMenu,
-     DropdownMenuContent,
-     DropdownMenuItem,
-     DropdownMenuSeparator,
-     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-     AlertCircle,
-     BarChart3,
-     Clock,
-     FileText,
-     MoreHorizontal,
-     UserPlus,
-     Users,
-     CheckCircle,
-     XCircle,
-} from "lucide-react";
+import { AlertCircle, BarChart3, Clock, FileText, UserPlus, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,35 +31,6 @@ import ActivityFallBack from "@/components/fallbacks/activity/activity";
 import { useInviteMutation } from "@/api/invitations.api";
 import { useToast } from "@/components/Toast";
 import { Loadable } from "@/components/state";
-
-// Mock data
-const analyticsData = {
-     tasksDueSoon: 8,
-     completionRate: 0.72,
-     activeProjects: 5,
-     upcomingMeetings: 3,
-     latestMeeting: "2025-05-18T10:00:00",
-     tasksByStatus: [
-          { status: "Completed", count: 24 },
-          { status: "In Progress", count: 18 },
-          { status: "Pending", count: 12 },
-          { status: "Overdue", count: 6 },
-     ],
-     tasksByPriority: [
-          { priority: "High", count: 15 },
-          { priority: "Medium", count: 30 },
-          { priority: "Low", count: 15 },
-     ],
-     weeklyProgress: [
-          { day: "Mon", completed: 5 },
-          { day: "Tue", completed: 7 },
-          { day: "Wed", completed: 3 },
-          { day: "Thu", completed: 8 },
-          { day: "Fri", completed: 4 },
-          { day: "Sat", completed: 2 },
-          { day: "Sun", completed: 1 },
-     ],
-};
 
 // const invitationRequests = [
 //      {
@@ -175,7 +129,7 @@ export default function TeamLeaderDashboard() {
                                                   </div>
                                              </div>
                                              <DialogFooter>
-                                                  <Button variant={'primary'} disabled={inviting} type="submit">
+                                                  <Button variant={"primary"} disabled={inviting} type="submit">
                                                        <Loadable isLoading={inviting}>Send Invitation</Loadable>
                                                   </Button>
                                              </DialogFooter>

@@ -2,8 +2,8 @@ import { useHandleDeadlineMutation, useMyTasksQuery } from "@/api/tasks.api";
 import Layout from "@/components/sidebar/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ITask, TaskFilter, TaskPriorityType, TaskStatusType } from "@/types/task.types";
-import { Plus, CheckCircle, AlertTriangle, Clock, Calendar, Coffee } from "lucide-react";
+import { ITask, TaskPriorityType, TaskStatusType } from "@/types/task.types";
+import { Plus, CheckCircle, AlertTriangle, Clock, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +23,12 @@ import TaskFallBack from "@/components/fallbacks/task/task";
 
 export default function Tasks() {
      const [statusFilter, setStatusFilter] = useState<string | undefined>("all");
-     const [taskFilter, setTaskFilter] = useState<TaskFilter>(undefined);
      const { user } = useSelector((state: RootState) => state.base.auth);
      const { projects } = useSelector((state: RootState) => state.base.projects);
 
      const [searchQuery, setSearchQuery] = useState("");
 
-     const { data: tasks, isFetching } = useMyTasksQuery(taskFilter);
+     const { data: tasks, isFetching } = useMyTasksQuery(undefined);
 
      const filteredTasks = tasks?.tasks.filter((task) =>
           task.name.toLowerCase().includes(searchQuery.toLowerCase()) && statusFilter === "all"

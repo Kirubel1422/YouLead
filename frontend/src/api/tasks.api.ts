@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { DOTENV } from "@/constants/env";
 import { IResponse } from "@/types/response.types";
-import { IEditTask, ITask, ITaskDetail, ITaskMetaData, TaskFilter } from "@/types/task.types";
+import { IEditTask, ITaskDetail, ITaskMetaData, TaskFilter } from "@/types/task.types";
 import { TaskSchemaType } from "@/schemas/task.schema";
 
 export interface IMyTasksResponse {

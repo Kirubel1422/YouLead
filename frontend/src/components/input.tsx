@@ -7,7 +7,7 @@ export const AuthInput = ({
      suffixIcon,
      ...props
 }: React.InputHTMLAttributes<HTMLInputElement> & {
-     error?: string;
+     error?: boolean;
      preIcon?: React.ReactNode;
      suffixIcon?: React.ReactNode;
 }) => {

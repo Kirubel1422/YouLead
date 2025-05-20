@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Search, Send, MessageSquare, Paperclip, MoreHorizontal, ClipboardList, Briefcase } from "lucide-react";
 import {
      DropdownMenu,
@@ -23,7 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { socket } from "@/services/socket";
 import { useFetchDMMessagesQuery } from "@/api/messages.api";
 import { IChat, IChatUser, IMessage, OnlineStatus } from "@/types/messages.types";
-import { notificationSound } from "@/assets";
 import { useLocation } from "react-router";
 
 const intersectionObserverOption = {
@@ -40,12 +39,10 @@ export const ChatInterface = () => {
 
      // Intersection Observer
      const containerRef = useRef(null);
-     const [isVisible, setIsVisible] = useState(false);
      const [messages, setMessages] = useState<IMessage[]>([] as IMessage[]);
 
      const callbackFunction = (entries: IntersectionObserverEntry[]) => {
           const [entry] = entries;
-          setIsVisible(entry.isIntersecting);
 
           if (entry.isIntersecting) {
                const lastMessage = messages[messages.length - 1];
@@ -299,6 +296,7 @@ export const ChatInterface = () => {
                     role: user.role,
                     status: "online",
                     teamId: user.teamId as string,
+                    email: user.profile.email,
                };
           }
           return members.find((user) => user.id === id);

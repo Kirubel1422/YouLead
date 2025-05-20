@@ -1,5 +1,5 @@
 import { ProjectStatusTypes } from "@/types/project.types";
-import { TaskPriorityType, TaskStatus, TaskStatusType } from "@/types/task.types";
+import { TaskStatusType } from "@/types/task.types";
 import { UserRole } from "@/types/user.types";
 import { format, formatDistance, isSameDay, isToday, isValid, parseISO, subDays } from "date-fns";
 
@@ -142,7 +142,7 @@ export const aiResponseToHTML = (text: string) => {
           .replace(/(<li>.*<\/li>)+/g, "<ol>$&</ol>");
 
      // Convert tables (basic markdown tables)
-     html = html.replace(/(\|.+\|.+\|[\r\n]+)((?:\|.+\|.+\|[\r\n]+)+)/g, (match, header, body) => {
+     html = html.replace(/(\|.+\|.+\|[\r\n]+)((?:\|.+\|.+\|[\r\n]+)+)/g, (_, header, body) => {
           const headers = header.split("|").filter((c: any) => c.trim());
           const rows = body.split("\n").filter((r: any) => r.trim());
 

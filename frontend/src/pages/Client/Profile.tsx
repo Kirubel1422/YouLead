@@ -1,26 +1,7 @@
-"use client";
-
-import type React from "react";
-
 import { useEffect, useState } from "react";
-import {
-     Mail,
-     Phone,
-     Calendar,
-     Edit,
-     CheckCircle,
-     Clock,
-     AlertTriangle,
-     Lock,
-     Eye,
-     EyeOff,
-     Save,
-     X,
-     Users,
-     ChevronRight,
-} from "lucide-react";
+import { Mail, Phone, Calendar, CheckCircle, Clock, AlertTriangle, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,14 +16,7 @@ import {
      DialogFooter,
      DialogHeader,
      DialogTitle,
-     DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-     DropdownMenu,
-     DropdownMenuContent,
-     DropdownMenuItem,
-     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import Layout from "@/components/sidebar/layout";
 import { getInitials, getRoleLabel } from "@/utils/basic";
 import { useSelector } from "react-redux";
@@ -54,41 +28,17 @@ import { useChangePasswordMutation } from "@/api/auth.api";
 import { useToast } from "@/components/Toast";
 import { Loadable } from "@/components/state";
 
-interface IProfile {
-     firstName: string;
-     lastName?: string;
-     email: string;
-     phoneNumber?: string;
-     profilePicture?: string;
-     password?: string;
-}
-
-// Mock team data
-const mockTeam = {
-     id: "team789",
-     name: "Product Development",
-     leader: {
-          name: "Sarah Johnson",
-          email: "sarah.johnson@example.com",
-          profilePicture: "/placeholder.svg?height=32&width=32",
-     },
-     members: 6,
-     projects: 3,
-};
-
 export default function Profile() {
      const { user } = useSelector((state: RootState) => state.base.auth);
 
-     const [isEditingProfile, setIsEditingProfile] = useState(false);
-     const [editedProfile, setEditedProfile] = useState<IProfile>(user.profile);
-     const [twoOpen , setTwoOpen] = useState<boolean>(false);
+     // const [editedProfile, setEditedProfile] = useState<IProfile>(user.profile);
+     const [twoOpen, setTwoOpen] = useState<boolean>(false);
 
      // Password change state
      const [confirmPassword, setConfirmPassword] = useState("");
      const [showCurrentPassword, setShowCurrentPassword] = useState(false);
      const [showNewPassword, setShowNewPassword] = useState(false);
      const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-     const [passwordError, setPasswordError] = useState<string | null>(null);
 
      const { showToast } = useToast();
 
@@ -109,13 +59,13 @@ export default function Profile() {
           }).format(date);
      };
 
-     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          const { name, value } = e.target;
-          setEditedProfile((prev: IProfile) => ({
-               ...prev,
-               [name]: value,
-          }));
-     };
+     // const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+     //      const { name, value } = e.target;
+     //      setEditedProfile((prev: IProfile) => ({
+     //           ...prev,
+     //           [name]: value,
+     //      }));
+     // };
 
      // const handleCancelEdit = () => {
      //      setEditedProfile(user.profile);
@@ -263,79 +213,26 @@ export default function Profile() {
                                    )} */}
                               </CardHeader>
                               <CardContent>
-                                   {isEditingProfile ? (
-                                        <div className="space-y-4">
-                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                  <div className="space-y-2">
-                                                       <Label htmlFor="firstName">First Name</Label>
-                                                       <Input
-                                                            id="firstName"
-                                                            name="firstName"
-                                                            value={editedProfile.firstName}
-                                                            onChange={handleProfileChange}
-                                                       />
-                                                  </div>
-                                                  <div className="space-y-2">
-                                                       <Label htmlFor="lastName">Last Name</Label>
-                                                       <Input
-                                                            id="lastName"
-                                                            name="lastName"
-                                                            value={editedProfile.lastName || ""}
-                                                            onChange={handleProfileChange}
-                                                       />
-                                                  </div>
-                                             </div>
-                                             <div className="space-y-2">
-                                                  <Label htmlFor="email">Email</Label>
-                                                  <Input
-                                                       id="email"
-                                                       name="email"
-                                                       type="email"
-                                                       value={editedProfile.email}
-                                                       onChange={handleProfileChange}
-                                                  />
-                                             </div>
-                                             <div className="space-y-2">
-                                                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                                                  <Input
-                                                       id="phoneNumber"
-                                                       name="phoneNumber"
-                                                       value={editedProfile.phoneNumber || ""}
-                                                       onChange={handleProfileChange}
-                                                  />
-                                             </div>
-                                             <div className="space-y-2">
-                                                  <Label htmlFor="profilePicture">Profile Picture URL</Label>
-                                                  <Input
-                                                       id="profilePicture"
-                                                       name="profilePicture"
-                                                       value={editedProfile.profilePicture || ""}
-                                                       onChange={handleProfileChange}
-                                                  />
-                                             </div>
-                                        </div>
-                                   ) : (
-                                        <div className="space-y-4">
-                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                  <div>
-                                                       <h3 className="text-sm font-medium text-gray-500">First Name</h3>
-                                                       <p>{user.profile.firstName}</p>
-                                                  </div>
-                                                  <div>
-                                                       <h3 className="text-sm font-medium text-gray-500">Last Name</h3>
-                                                       <p>{user.profile.lastName || "—"}</p>
-                                                  </div>
+                                   <div className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                             <div>
+                                                  <h3 className="text-sm font-medium text-gray-500">First Name</h3>
+                                                  <p>{user.profile.firstName}</p>
                                              </div>
                                              <div>
-                                                  <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                                                  <p>{user.profile.email}</p>
-                                             </div>
-                                             <div>
-                                                  <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
-                                                  <p>{user.profile.phoneNumber || "—"}</p>
+                                                  <h3 className="text-sm font-medium text-gray-500">Last Name</h3>
+                                                  <p>{user.profile.lastName || "—"}</p>
                                              </div>
                                         </div>
-                                   )}
+                                        <div>
+                                             <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                                             <p>{user.profile.email}</p>
+                                        </div>
+                                        <div>
+                                             <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
+                                             <p>{user.profile.phoneNumber || "—"}</p>
+                                        </div>
+                                   </div>
                               </CardContent>
                          </Card>
 
@@ -668,10 +565,6 @@ export default function Profile() {
                                                   </div>
                                              </div>
 
-                                             {passwordError && (
-                                                  <div className="text-sm text-red-500">{passwordError}</div>
-                                             )}
-
                                              <Button variant={"primary"} type="submit">
                                                   <Lock className="h-4 w-4 mr-2" />
                                                   <Loadable isLoading={changing}>Change Password</Loadable>
@@ -691,7 +584,9 @@ export default function Profile() {
                                                             Add an extra layer of security to your account
                                                        </p>
                                                   </div>
-                                                            <Button onClick={() => setTwoOpen(true)} variant="outline">Setup</Button>
+                                                  <Button onClick={() => setTwoOpen(true)} variant="outline">
+                                                       Setup
+                                                  </Button>
                                                   <Dialog open={twoOpen} onOpenChange={setTwoOpen}>
                                                        <DialogContent>
                                                             <DialogHeader>
@@ -707,8 +602,18 @@ export default function Profile() {
                                                                  </p>
                                                             </div>
                                                             <DialogFooter>
-                                                                 <Button onClick={() => setTwoOpen(false)} variant="outline">Cancel</Button>
-                                                                 <Button onClick={() => setTwoOpen(false)} variant={"primary"}>Continue</Button>
+                                                                 <Button
+                                                                      onClick={() => setTwoOpen(false)}
+                                                                      variant="outline"
+                                                                 >
+                                                                      Cancel
+                                                                 </Button>
+                                                                 <Button
+                                                                      onClick={() => setTwoOpen(false)}
+                                                                      variant={"primary"}
+                                                                 >
+                                                                      Continue
+                                                                 </Button>
                                                             </DialogFooter>
                                                        </DialogContent>
                                                   </Dialog>

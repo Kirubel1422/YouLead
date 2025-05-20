@@ -1,23 +1,18 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { CalendarIcon, Plus } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Layout from "@/components/sidebar/layout";
 import { Badge } from "@/components/ui/badge";
 import { EventType } from "@/types/calendar.type";
 import { useMyEventsQuery } from "@/api/calendar.api";
 import { EventDay } from "@/components/modal/calendar/EventDay";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/rootReducer";
 
 export default function Calendar() {
      const [date, setDate] = useState<Date | undefined>(new Date());
-     const { user } = useSelector((state: RootState) => state.base.auth);
 
      // Fetch user events
-     const { data: events, isFetching: fetchingEvents } = useMyEventsQuery();
+     const { data: events } = useMyEventsQuery();
 
      const selectedDateEvents = events?.filter((event) => {
           if (date) {
