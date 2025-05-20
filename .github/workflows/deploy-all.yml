@@ -102,7 +102,7 @@ jobs:
           script: |
             mkdir -p /var/www/youlead/backend
             sudo chown /var/www/youlead/backend ${{ secrets.VPS_USER }}
-            sudo chmod chmod 755 /var/www/youlead/backend
+            sudo chmod 755 /var/www/youlead/backend
 
       - name: Send Backend Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
