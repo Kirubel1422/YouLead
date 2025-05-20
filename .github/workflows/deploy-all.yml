@@ -59,7 +59,7 @@ jobs:
           DOTENV_KEY: ${{ secrets.BACKEND_DOTENV_KEY }}
         run: |
           cd backend 
-          echo "${{ secrets.ADMIN_SDK }}" | base64 --decode admin-sdk.json
+          echo "${{ secrets.ADMIN_SDK }}" | base64 --decode > admin-sdk.json
           pnpm run build || exit 1
 
       - name: Add SSH key on Runner
