@@ -54,7 +54,7 @@ jobs:
           cd frontend/
           pnpm run build || exit 1
           pwd 
-          ls -la frontend/
+          ls -la .
 
       - name: Build Backend
         env:
@@ -62,7 +62,7 @@ jobs:
         run: |
           cd backend 
           pwd
-          ls -al backend
+          ls -al .
           echo "${{ secrets.ADMIN_SDK }}" | base64 --decode > admin-sdk.json
           pnpm run build || exit 1
 
