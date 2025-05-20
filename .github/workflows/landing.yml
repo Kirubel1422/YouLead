@@ -2,6 +2,8 @@ name: Deploy Landing
 
 on:
   pull_request:
+    paths:
+      - "landing-page/**"
     branches:
       - master
     types:
@@ -12,7 +14,7 @@ on:
 
 jobs:
   deploy-frontend:
-    if: github.event.pull_request.merged == true || github.event_name != 'pull_request'
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     steps:
