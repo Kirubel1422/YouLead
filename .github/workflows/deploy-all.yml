@@ -10,6 +10,13 @@ on:
       - master
     types:
       - closed
+  push:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "landing-page/**"
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
