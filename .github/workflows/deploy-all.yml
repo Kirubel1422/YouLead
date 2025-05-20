@@ -53,12 +53,16 @@ jobs:
         run: |
           cd frontend/
           pnpm run build || exit 1
+          pwd 
+          ls -la frontend/
 
       - name: Build Backend
         env:
           DOTENV_KEY: ${{ secrets.BACKEND_DOTENV_KEY }}
         run: |
           cd backend 
+          pwd
+          ls -al backend
           echo "${{ secrets.ADMIN_SDK }}" | base64 --decode > admin-sdk.json
           pnpm run build || exit 1
 
@@ -85,12 +89,7 @@ jobs:
 
       - name: Send Frontend Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          port: ${{ secrets.VPS_PORT }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/frontend
+        run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/frontend
 
       - name: Create Server Side Deployment Directory on VPS
         uses: appleboy/ssh-action@v0.1.7
@@ -106,13 +105,7 @@ jobs:
 
       - name: Send Backend Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          port: ${{ secrets.VPS_PORT }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
+        run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
 
       - name: Start Backend
         uses: appleboy/ssh-action@v0.1.7
@@ -142,13 +135,7 @@ jobs:
 
       - name: Send Landing Page Build Files to VPS
         uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          port: ${{ secrets.VPS_PORT }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          scripts: |
-            rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" landing-page/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/landing-page
+        run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" landing-page/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/landing-page
 
       - name: Start Landing Page
         uses: appleboy/ssh-action@v0.1.7
