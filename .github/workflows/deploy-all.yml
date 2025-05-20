@@ -44,7 +44,7 @@ jobs:
 
           cd ../landing-page
           echo "Installing Landing Page Dependencies"
-          pnpm install ||
+          pnpm install --frozen-lockfile=false ||
 
           cd ../
 
