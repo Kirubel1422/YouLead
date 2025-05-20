@@ -48,6 +48,12 @@ export default function App() {
           }
      }, [location.pathname]);
 
+     useEffect(() => {
+          if (location.pathname == "/") {
+               navigate("/login");
+          }
+     }, [location.pathname]);
+
      return (
           <div>
                <Routes>
