@@ -79,7 +79,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            mkdir -p /var/www/youlead/frontend
+            sudo mkdir -p /var/www/youlead/frontend
             sudo chown /var/www/youlead/frontend ${{ secrets.VPS_USER }}
             sudo chmod 755 /var/www/youlead/frontend
 
@@ -100,7 +100,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            mkdir -p /var/www/youlead/backend
+            sudo mkdir -p /var/www/youlead/backend
             sudo chown /var/www/youlead/backend ${{ secrets.VPS_USER }}
             sudo chmod 755 /var/www/youlead/backend
 
@@ -115,7 +115,7 @@ jobs:
             rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
             cd /var/www/youlead/backend
             pnpm install --prod
-            pm2 start dist/app.js --name YouLead-Backend
+            pm2 start app.js --name YouLead-Backend
             pm2 save 
             pm2 status
 
@@ -127,8 +127,8 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            mkdir -p /var/www/youlead/landing-page
-            sudo chown /var/www/youlead/landing-page ${{ secrets.VPS_USER }}
+            sudo mkdir -p /var/www/youlead/landing-page
+            sudo chown ${{ secrets.VPS_USER }}: /var/www/youlead/landing-page 
             sudo chmod 755 /var/www/youlead/landing-page
 
       - name: Send Landing Page Build Files to VPS
