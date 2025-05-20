@@ -36,10 +36,20 @@ jobs:
         run: |
           pnpm install --frozen-lockfile=false
 
-      - name: Build Landing page
+      - name: Install Dependencies
         run: |
-          cd landing-page/
-          pnpm run build || exit 1
+          cd frontend/
+          echo "Installing Client Side Dependencies"
+          pnpm install --frozen-lockfile
+
+          cd ../backend/
+          echo "Installing Backend Dependencies"
+          pnpm install --frozen-lockfile
+
+          cd ../landing-page/
+          echo "Installing Landing Page Dependencies"
+          pnpm install --frozen-lockfile
+          cd ../
 
       - name: Build Client Dashboard
         env:
