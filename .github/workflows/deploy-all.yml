@@ -1,0 +1,145 @@
+name: Deploy All
+
+on:
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "landing-page/**"
+    branches:
+      - master
+    types:
+      - closed
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs_on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Install Dependencies
+        scripts: |
+          cd frontend/
+          pnpm install
+
+          cd ../backend/
+          pnpm install
+
+          cd ../landing-page
+          pnpm install
+
+          cd ../
+
+      - name: Build Landing page
+        script: |
+          cd landing-page/
+          pnpm run build
+
+      - name: Build Client Dashboard
+        env:
+          DOTENV_KEY: ${{ secrets.FRONTEND_DOTENV_KEY }}
+        script: |
+          cd frontend/
+          pnpm run build
+
+      - name: Build Backend
+        env:
+          DOTENV_KEY: ${{ secrets.BACKEND_DOTENV_KEY }}
+        script: |
+          cd backend
+          pnpm run build
+
+      - name: Add SSH key on Runner
+        script: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" >> ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Add VPS Host key to known Hosts
+        run: ssh-keyscan -p ${{ secrets.VPS_PORT }} ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create Client Side Deployment Directory on VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /var/www/youlead/frontend
+            sudo chown /var/www/youlead/frontend ${{ secrets.VPS_USER }}
+            sudo chmod chmod 777 /var/www/youlead/frontend
+
+      - name: Send Frontend Build Files to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/frontend
+
+      - name: Create Server Side Deployment Directory on VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /var/www/youlead/backend
+            sudo chown /var/www/youlead/backend ${{ secrets.VPS_USER }}
+            sudo chmod chmod 777 /var/www/youlead/backend
+
+      - name: Send Backend Build Files to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
+            cd /var/www/youlead/backend
+            pm2 start --name YouLead-Backend
+            pm2 save 
+            pm2 status
+
+      - name: Create Landing Page Directory on VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            mkdir -p /var/www/youlead/landing-page
+            sudo chown /var/www/youlead/landing-page ${{ secrets.VPS_USER }}
+            sudo chmod 777 /var/www/youlead/landing-page
+
+      - name: Send Landing Page Build Files to VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          scripts: |
+            rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" landing-page/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/landing-page
+            cd /var/www/youlead/landing-page
+            pm2 start --name YouLead_NextJS
+            pm2 save
+            pm2 status
+
+      - name: Restart Nginx
+        scripts: |
+          sudo nginx -t 
+          sudo systemctl restart nginx
