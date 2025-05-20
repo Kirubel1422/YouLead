@@ -113,6 +113,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
+
+      - name: Start Backend
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
             cd /var/www/youlead/backend
             pnpm install --prod
             pm2 start app.js --name YouLead-Backend
@@ -140,6 +149,15 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           scripts: |
             rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" landing-page/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/landing-page
+
+      - name: Start Landing Page
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          scripts: |
             cd /var/www/youlead/landing-page
             pm2 start --name YouLead_NextJS
             pm2 save
