@@ -88,7 +88,6 @@ jobs:
             sudo chmod 755 /var/www/youlead/frontend
 
       - name: Send Frontend Build Files to VPS
-        uses: appleboy/ssh-action@v0.1.7
         run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" frontend/dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/frontend
 
       - name: Create Server Side Deployment Directory on VPS
@@ -104,7 +103,6 @@ jobs:
             sudo chmod 755 /var/www/youlead/backend
 
       - name: Send Backend Build Files to VPS
-        uses: appleboy/ssh-action@v0.1.7
         run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" backend/dist ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/backend
 
       - name: Start Backend
@@ -134,7 +132,6 @@ jobs:
             sudo chmod 755 /var/www/youlead/landing-page
 
       - name: Send Landing Page Build Files to VPS
-        uses: appleboy/ssh-action@v0.1.7
         run: rsync -avz -e "ssh -i ~/.ssh/id_rsa -p ${{ secrets.VPS_PORT }}" landing-page/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/youlead/landing-page
 
       - name: Start Landing Page
