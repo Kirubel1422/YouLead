@@ -1,54 +1,50 @@
-# React + TypeScript + Vite
+# YouLead Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+YouLead frontend is a React application that serves as the user interface for the YouLead platform. It allows users to interact with the backend API, manage their profiles, and access various features of the application.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Prerequisites
 
-## Expanding the ESLint configuration
+-    Node.js (v18 or higher)
+-    .env file (see `.env.example`)
+-    `pnpm` suggested for package management
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Installation
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+1. Clone the repository:
+     ```bash
+      git clone https://github.com/Kirubel1422/YouLead.git
+      cd YouLead/frontend
+     ```
+2. Install dependencies:
+     ```bash
+     pnpm install
+     ```
+3. Set up environment variables:
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+     - Copy `.env.example` to `.env` and fill in the required values.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+4. Start the development server:
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+     ```bash
+     pnpm run dev
+     ```
+
+5. The application will run on `http://localhost:5173` by default.
+
+### Usage
+
+YouLead frontend provides a user-friendly interface for users to interact with the YouLead platform. You can register, log in, and manage your profile. The frontend communicates with the backend API to perform various operations.
+
+### Features
+
+-    User authentication (registration, login, logout)
+-    Profile management (view and update user profiles)
+-    Dashboard for handling Team Management
+-    Responsive design for mobile and desktop
+-    Integration with Firebase for real-time data updates
+
+### Contributing
+
+If you want to contribute to the YouLead frontend, feel free to submit a pull request or open an issue. Contributions are welcome!
